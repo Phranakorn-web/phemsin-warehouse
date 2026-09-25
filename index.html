@@ -1,12 +1,12 @@
 <?php 
 // =========================================================================
-// --- WMS Enterprise Suite v2026 Hardened Edition (Security & Multi-User) ---
+// --- WMS Enterprise Suite v2026 Hardened Edition (Audit Log & Security) ---
 // =========================================================================
 session_start();
 date_default_timezone_set('Asia/Bangkok');
 ?>
 <!DOCTYPE html>
-<html lang="th">
+<html lang="th" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -24,11 +24,16 @@ date_default_timezone_set('Asia/Bangkok');
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 
     <style>
-        :root {
-            --bg-body: #f8fafc;
+        /* ==========================================
+           THEME SYSTEM VARIABLES (LIGHT & DARK MODE)
+           ========================================== */
+        :root, html[data-theme="light"] {
+            --bg-body: #f4f6f9;
             --bg-surface: #ffffff;
             --bg-subtle: #f1f5f9;
             --bg-hover: #e2e8f0;
+            --bg-nav: #ffffff;
+            --bg-sidebar: #0f172a;
             
             --border-color: #e2e8f0;
             --border-strong: #cbd5e1;
@@ -42,6 +47,7 @@ date_default_timezone_set('Asia/Bangkok');
             --primary-hover: #1d4ed8;
             --primary-light: #eff6ff;
             --primary-border: #bfdbfe;
+            --primary-text: #1d4ed8;
             
             --success: #059669;
             --success-light: #ecfdf5;
@@ -50,13 +56,50 @@ date_default_timezone_set('Asia/Bangkok');
             --danger: #dc2626;
             --danger-light: #fef2f2;
             
-            --sidebar-width: 260px;
-            --radius-sm: 6px;
-            --radius-md: 10px;
-            --radius-lg: 14px;
             --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
             --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
             --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.12);
+        }
+
+        html[data-theme="dark"] {
+            --bg-body: #090d16;
+            --bg-surface: #111827;
+            --bg-subtle: #1f2937;
+            --bg-hover: #374151;
+            --bg-nav: #111827;
+            --bg-sidebar: #0d131f;
+            
+            --border-color: rgba(255, 255, 255, 0.08);
+            --border-strong: rgba(255, 255, 255, 0.16);
+            
+            --text-main: #f9fafb;
+            --text-sub: #d1d5db;
+            --text-muted: #9ca3af;
+            --text-white: #ffffff;
+            
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --primary-light: rgba(79, 70, 229, 0.15);
+            --primary-border: rgba(99, 102, 241, 0.3);
+            --primary-text: #a5b4fc;
+            
+            --success: #10b981;
+            --success-light: rgba(16, 185, 129, 0.15);
+            --warning: #f59e0b;
+            --warning-light: rgba(245, 158, 11, 0.15);
+            --danger: #ef4444;
+            --danger-light: rgba(239, 68, 68, 0.15);
+            
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
+            --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.35);
+            --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        :root {
+            --sidebar-width: 260px;
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -68,6 +111,7 @@ date_default_timezone_set('Asia/Bangkok');
             height: 100vh;
             width: 100vw;
             overflow: hidden;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
         .mono { font-family: 'JetBrains Mono', monospace; }
 
@@ -83,37 +127,39 @@ date_default_timezone_set('Asia/Bangkok');
             padding: 20px;
         }
         .login-card {
-            background: #ffffff;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-strong);
             width: 100%;
             max-width: 420px;
             border-radius: var(--radius-lg);
             padding: 2.2rem;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+            box-shadow: var(--shadow-lg);
             text-align: center;
         }
         .login-brand-icon {
-            width: 60px;
-            height: 60px;
-            background: var(--primary);
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, var(--primary) 0%, #6366f1 100%);
             color: #ffffff;
-            border-radius: 16px;
+            border-radius: 20px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.8rem;
+            font-size: 1.9rem;
             margin-bottom: 1rem;
-            box-shadow: 0 10px 20px rgba(37, 99, 235, 0.3);
+            box-shadow: 0 10px 25px rgba(37, 99, 235, 0.3);
         }
 
         /* Fullscreen Layout Structure */
         .sidebar {
             width: var(--sidebar-width);
-            background: #0f172a;
+            background: var(--bg-sidebar);
             color: var(--text-white);
             display: flex;
             flex-direction: column;
             flex-shrink: 0;
             z-index: 100;
+            border-right: 1px solid var(--border-color);
         }
         .sidebar-brand {
             padding: 1.25rem 1.5rem;
@@ -123,16 +169,16 @@ date_default_timezone_set('Asia/Bangkok');
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
         .brand-icon {
-            width: 40px;
-            height: 40px;
-            background: var(--primary);
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, var(--primary) 0%, #6366f1 100%);
             border-radius: var(--radius-md);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.2rem;
+            font-size: 1.25rem;
             color: #ffffff;
-            box-shadow: 0 0 12px rgba(37, 99, 235, 0.4);
+            box-shadow: 0 0 15px rgba(37, 99, 235, 0.4);
         }
         .sidebar-menu {
             list-style: none;
@@ -151,13 +197,13 @@ date_default_timezone_set('Asia/Bangkok');
             padding: 12px 16px;
             border: none;
             background: transparent;
-            color: #94a3b8;
+            color: #9ca3af;
             font-family: 'Prompt', sans-serif;
             font-size: 0.92rem;
             font-weight: 500;
             border-radius: var(--radius-md);
             cursor: pointer;
-            transition: all 0.15s ease-out;
+            transition: all 0.2s ease;
             text-align: left;
         }
         .menu-item button:hover {
@@ -165,10 +211,10 @@ date_default_timezone_set('Asia/Bangkok');
             color: var(--text-white);
         }
         .menu-item button.active {
-            background: var(--primary);
+            background: linear-gradient(90deg, var(--primary) 0%, #6366f1 100%);
             color: var(--text-white);
             font-weight: 600;
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.35);
         }
 
         .main-wrapper {
@@ -180,8 +226,8 @@ date_default_timezone_set('Asia/Bangkok');
         }
 
         .top-navbar {
-            height: 60px;
-            background: var(--bg-surface);
+            height: 64px;
+            background: var(--bg-nav);
             border-bottom: 1px solid var(--border-color);
             display: flex;
             align-items: center;
@@ -189,6 +235,7 @@ date_default_timezone_set('Asia/Bangkok');
             padding: 0 1.5rem;
             flex-shrink: 0;
             box-shadow: var(--shadow-sm);
+            transition: background-color 0.3s ease;
         }
         .status-badge {
             display: inline-flex;
@@ -207,11 +254,11 @@ date_default_timezone_set('Asia/Bangkok');
             height: 8px;
             border-radius: 50%;
             background: var(--success);
-            box-shadow: 0 0 8px var(--success);
+            box-shadow: 0 0 10px var(--success);
         }
         .pulse-dot.offline {
             background: var(--danger);
-            box-shadow: 0 0 8px var(--danger);
+            box-shadow: 0 0 10px var(--danger);
         }
 
         .user-profile-badge {
@@ -220,12 +267,28 @@ date_default_timezone_set('Asia/Bangkok');
             gap: 8px;
             background: var(--primary-light);
             border: 1px solid var(--primary-border);
-            padding: 4px 12px;
+            padding: 6px 14px;
             border-radius: 20px;
-            font-size: 0.82rem;
+            font-size: 0.84rem;
             font-weight: 700;
-            color: var(--primary);
+            color: var(--primary-text);
         }
+
+        .theme-toggle-btn {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-strong);
+            color: var(--text-main);
+            padding: 6px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }
+        .theme-toggle-btn:hover { background: var(--bg-hover); }
 
         .content-area {
             flex: 1;
@@ -241,6 +304,7 @@ date_default_timezone_set('Asia/Bangkok');
             padding: 1.25rem;
             box-shadow: var(--shadow-sm);
             margin-bottom: 1.25rem;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
         }
         .card-header {
             display: flex;
@@ -261,9 +325,10 @@ date_default_timezone_set('Asia/Bangkok');
             color: var(--text-main);
         }
 
-        /* Modern UI Improvements for Settings Page */
+        /* Modern Hero Banner */
         .settings-hero-banner {
             background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border: 1px solid var(--primary-border);
             color: #ffffff;
             border-radius: var(--radius-lg);
             padding: 1.5rem 1.8rem;
@@ -271,19 +336,9 @@ date_default_timezone_set('Asia/Bangkok');
             display: flex;
             align-items: center;
             justify-content: space-between;
-            box-shadow: 0 10px 20px rgba(15, 23, 42, 0.15);
+            box-shadow: var(--shadow-md);
             position: relative;
             overflow: hidden;
-        }
-        .settings-hero-banner::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -10%;
-            width: 300px;
-            height: 300px;
-            background: radial-gradient(circle, rgba(37,99,235,0.25) 0%, rgba(0,0,0,0) 70%);
-            pointer-events: none;
         }
 
         .settings-section-card {
@@ -293,10 +348,6 @@ date_default_timezone_set('Asia/Bangkok');
             padding: 1.5rem;
             box-shadow: var(--shadow-sm);
             margin-bottom: 1.5rem;
-            transition: all 0.2s ease;
-        }
-        .settings-section-card:hover {
-            box-shadow: var(--shadow-md);
         }
 
         .settings-bar-container {
@@ -319,7 +370,7 @@ date_default_timezone_set('Asia/Bangkok');
             font-size: 0.88rem;
         }
         .modern-table th {
-            background: #f8fafc;
+            background: var(--bg-subtle);
             color: var(--text-sub);
             font-weight: 700;
             padding: 12px 16px;
@@ -331,14 +382,12 @@ date_default_timezone_set('Asia/Bangkok');
         .modern-table td {
             padding: 12px 16px;
             border-bottom: 1px solid var(--border-color);
-            background: #ffffff;
+            background: var(--bg-surface);
+            color: var(--text-main);
             transition: background 0.15s ease;
         }
         .modern-table tbody tr:hover td {
-            background: var(--primary-light);
-        }
-        .modern-table tbody tr:last-child td {
-            border-bottom: none;
+            background: var(--bg-subtle);
         }
 
         /* KPI Dashboard Grid */
@@ -385,27 +434,28 @@ date_default_timezone_set('Asia/Bangkok');
             position: absolute;
             top: 100%; left: 0; right: 0;
             background: var(--bg-surface);
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--border-strong);
             border-radius: var(--radius-md);
             max-height: 240px;
             overflow-y: auto;
             z-index: 1000;
-            box-shadow: var(--shadow-md);
+            box-shadow: var(--shadow-lg);
             display: none;
         }
         .suggestion-item {
             padding: 10px 14px;
             cursor: pointer;
             font-size: 0.88rem;
-            border-bottom: 1px solid var(--bg-subtle);
+            border-bottom: 1px solid var(--border-color);
             transition: background 0.15s;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            color: var(--text-main);
         }
         .suggestion-item:hover {
             background: var(--primary-light);
-            color: var(--primary);
+            color: var(--primary-text);
         }
 
         .feed-item {
@@ -438,7 +488,7 @@ date_default_timezone_set('Asia/Bangkok');
         .form-group label {
             font-size: 0.84rem;
             font-weight: 600;
-            color: var(--text-main);
+            color: var(--text-sub);
             display: flex;
             align-items: center;
             gap: 6px;
@@ -457,7 +507,7 @@ date_default_timezone_set('Asia/Bangkok');
         }
         .form-control:focus, .form-select:focus {
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
         }
 
         /* Buttons */
@@ -476,7 +526,7 @@ date_default_timezone_set('Asia/Bangkok');
             transition: all 0.2s ease;
         }
         .btn-sm { padding: 5px 10px; font-size: 0.78rem; border-radius: 6px; }
-        .btn-primary { background: var(--primary); color: #fff; }
+        .btn-primary { background: linear-gradient(135deg, var(--primary) 0%, #6366f1 100%); color: #fff; }
         .btn-primary:hover { background: var(--primary-hover); }
         .btn-success { background: var(--success); color: #fff; }
         .btn-warning { background: var(--warning); color: #fff; }
@@ -527,11 +577,27 @@ date_default_timezone_set('Asia/Bangkok');
             border-radius: 6px;
             font-size: 0.82rem;
             font-weight: 700;
-            background: #eff6ff;
-            color: #1d4ed8;
-            border: 1px solid #bfdbfe;
-            box-shadow: 0 1px 2px rgba(37, 99, 235, 0.08);
+            background: var(--primary-light);
+            color: var(--primary-text);
+            border: 1px solid var(--primary-border);
         }
+
+        /* Activity Action Badges */
+        .badge-action {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+        .badge-action.nav { background: rgba(56, 189, 248, 0.2); color: #0284c7; border: 1px solid rgba(56, 189, 248, 0.3); }
+        .badge-action.inbound { background: rgba(16, 185, 129, 0.2); color: #059669; border: 1px solid rgba(16, 185, 129, 0.3); }
+        .badge-action.outbound { background: rgba(245, 158, 11, 0.2); color: #d97706; border: 1px solid rgba(245, 158, 11, 0.3); }
+        .badge-action.delete { background: rgba(239, 68, 68, 0.2); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .badge-action.relocate { background: rgba(168, 85, 247, 0.2); color: #7e22ce; border: 1px solid rgba(168, 85, 247, 0.3); }
+        .badge-action.auth { background: rgba(99, 102, 241, 0.2); color: #4338ca; border: 1px solid rgba(99, 102, 241, 0.3); }
 
         /* Drill-down Location Rack Visualizer */
         .aisle-filter-bar {
@@ -559,10 +625,9 @@ date_default_timezone_set('Asia/Bangkok');
             transition: all 0.2s ease;
         }
         .aisle-tab-btn.active {
-            background: #ffffff;
-            color: var(--primary);
-            border-color: var(--border-color);
-            box-shadow: var(--shadow-sm);
+            background: var(--primary);
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
         }
 
         .bays-grid-container {
@@ -579,7 +644,6 @@ date_default_timezone_set('Asia/Bangkok');
             text-align: center;
             cursor: pointer;
             transition: all 0.2s ease;
-            box-shadow: var(--shadow-sm);
             position: relative;
             overflow: hidden;
         }
@@ -587,13 +651,13 @@ date_default_timezone_set('Asia/Bangkok');
         .bay-card-btn.active {
             background: var(--primary-light);
             border-color: var(--primary);
-            box-shadow: 0 0 10px rgba(37, 99, 235, 0.2);
+            box-shadow: 0 0 12px rgba(37, 99, 235, 0.3);
         }
 
         .capacity-bar {
             height: 6px;
             width: 100%;
-            background: #e2e8f0;
+            background: var(--bg-subtle);
             position: absolute;
             bottom: 0;
             left: 0;
@@ -628,25 +692,26 @@ date_default_timezone_set('Asia/Bangkok');
         .modal-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(15, 23, 42, 0.65);
+            background: rgba(15, 23, 42, 0.75);
             display: flex;
             align-items: center;
             justify-content: center;
             z-index: 9999;
-            backdrop-filter: blur(4px);
+            backdrop-filter: blur(6px);
         }
 
         .toast {
             position: fixed;
             bottom: 24px;
             right: 24px;
-            background: #0f172a;
-            color: #ffffff;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-strong);
+            color: var(--text-main);
             padding: 12px 20px;
             border-radius: var(--radius-md);
             font-size: 0.9rem;
             font-weight: 600;
-            box-shadow: var(--shadow-md);
+            box-shadow: var(--shadow-lg);
             display: flex;
             align-items: center;
             gap: 10px;
@@ -658,7 +723,7 @@ date_default_timezone_set('Asia/Bangkok');
             max-width: 80vw;
         }
         .toast.show { opacity: 1; transform: translateY(0); }
-        .toast.error { background: var(--danger); }
+        .toast.error { background: var(--danger); color: #fff; }
 
         .view-section { display: none; }
         .view-section.active { display: block; }
@@ -685,6 +750,7 @@ date_default_timezone_set('Asia/Bangkok');
             box-shadow: 0 2px 5px rgba(0,0,0,0.08);
             page-break-inside: avoid;
             overflow: hidden;
+            color: #000;
         }
 
         .thermal-card-50x30 { width: 220px; height: 135px; }
@@ -772,7 +838,7 @@ date_default_timezone_set('Asia/Bangkok');
             <div class="brand-icon"><i class="fa-solid fa-boxes-stacked"></i></div>
             <div>
                 <div style="font-weight: 800; font-size: 1.05rem; color:#fff;">WMS Enterprise</div>
-                <div style="font-size: 0.72rem; color: #94a3b8;">ระบบบริหารจัดการคลังสินค้า Ultimate</div>
+                <div style="font-size: 0.72rem; color: #9ca3af;">ระบบบริหารจัดการคลังสินค้า Ultimate</div>
             </div>
         </div>
 
@@ -787,6 +853,18 @@ date_default_timezone_set('Asia/Bangkok');
             </div>
             
             <div style="display:flex; align-items:center; gap:10px;">
+                <!-- NEW FEATURE: Theme Switcher Toggle Button -->
+                <button class="theme-toggle-btn" onclick="toggleAppTheme()" title="สลับธีม สว่าง / มืด">
+                    <i class="fa-solid fa-sun" id="themeIconSun" style="color:#f59e0b;"></i>
+                    <i class="fa-solid fa-moon" id="themeIconMoon" style="display:none; color:#a5b4fc;"></i>
+                    <span id="themeToggleText">โหมดสว่าง</span>
+                </button>
+
+                <!-- NEW FEATURE: AI Voice Audio Toggle -->
+                <button class="btn btn-sm btn-secondary" id="voiceToggleBtn" onclick="toggleVoiceAudioAlert()" title="เปิด/ปิด เสียง AI อ่านออกเสียงพูดภาษาไทย">
+                    <i class="fa-solid fa-volume-high" style="color:var(--success);"></i> AI Voice On
+                </button>
+
                 <div class="user-profile-badge" id="currentUserBadge">
                     <i class="fa-solid fa-user-circle"></i> <span id="currentUserNameText">admin</span>
                 </div>
@@ -898,7 +976,7 @@ date_default_timezone_set('Asia/Bangkok');
             <section id="view-inbound" class="view-section">
                 <div class="db-stat-box">
                     <div>
-                        <div style="font-size:0.85rem; color:var(--primary); font-weight:700;"><i class="fa-solid fa-database"></i> เชื่อมต่อฐานข้อมูลสินค้า Master (products)</div>
+                        <div style="font-size:0.85rem; color:var(--primary-text); font-weight:700;"><i class="fa-solid fa-database"></i> เชื่อมต่อฐานข้อมูลสินค้า Master (products)</div>
                         <div style="font-size:1.1rem; font-weight:800; color:var(--text-main);" id="inboundMasterProductsStatText">พร้อมค้นหาด่วนจาก 0 Master SKU</div>
                     </div>
                     <button class="btn btn-sm btn-primary" onclick="loadDataFromDatabase()"><i class="fa-solid fa-rotate"></i> ซิงค์ข้อมูล DB</button>
@@ -941,7 +1019,7 @@ date_default_timezone_set('Asia/Bangkok');
 
                             <div class="form-group" style="background:var(--primary-light); border:1px solid var(--primary-border); padding:0.9rem; border-radius:var(--radius-md);">
                                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                                    <label for="inboundSn" style="color:var(--primary); font-size:0.88rem; margin-bottom:0; font-weight:700;">
+                                    <label for="inboundSn" style="color:var(--primary-text); font-size:0.88rem; margin-bottom:0; font-weight:700;">
                                         <i class="fa-solid fa-barcode" style="font-size:1.1rem;"></i> หมายเลขซีเรียล (S/N)
                                     </label>
                                     <button type="button" class="btn btn-sm btn-secondary" onclick="generateAutoSN()"><i class="fa-solid fa-wand-magic-sparkles"></i> สุ่ม S/N</button>
@@ -952,7 +1030,7 @@ date_default_timezone_set('Asia/Bangkok');
                             <div class="card" style="background:var(--bg-subtle); padding:0.9rem; margin-top:0.4rem; margin-bottom:0.8rem;">
                                 <div style="font-weight:700; font-size:0.85rem; margin-bottom:0.5rem; display:flex; justify-content:space-between; align-items:center;">
                                     <span><i class="fa-solid fa-location-dot" style="color:var(--primary);"></i> เลือกพิกัดล็อกจัดเก็บ (ระบบคำนวณช่องว่างและรันล็อกให้อัตโนมัติ)</span>
-                                    <span id="bayInboundCountBadge" style="font-size:0.78rem; font-weight:700; color:var(--primary);" class="mono">รับแล้วในช่องนี้: 0 เครื่อง</span>
+                                    <span id="bayInboundCountBadge" style="font-size:0.78rem; font-weight:700; color:var(--primary-text);" class="mono">รับแล้วในช่องนี้: 0 เครื่อง</span>
                                 </div>
                                 
                                 <div class="form-grid">
@@ -974,7 +1052,7 @@ date_default_timezone_set('Asia/Bangkok');
                                     </div>
                                 </div>
                                 
-                                <div style="font-size:0.88rem; font-weight:700; color:var(--primary); margin-top:4px;">
+                                <div style="font-size:0.88rem; font-weight:700; color:var(--primary-text); margin-top:4px;">
                                     พิกัดที่จะรับเข้า: <span id="inboundLocationPreview" class="badge-location mono">DOCK</span>
                                 </div>
                             </div>
@@ -1027,7 +1105,7 @@ date_default_timezone_set('Asia/Bangkok');
                                 </div>
                             </div>
 
-                            <div class="form-group" style="background:var(--warning-light); border:1px solid rgba(217, 119, 6, 0.3); padding:1rem; border-radius:var(--radius-md);">
+                            <div class="form-group" style="background:var(--warning-light); border:1px solid rgba(245, 158, 11, 0.3); padding:1rem; border-radius:var(--radius-md);">
                                 <label for="outboundSn" style="color:var(--warning); font-size:0.95rem;"><i class="fa-solid fa-barcode"></i> ยิงสแกนหมายเลข S/N เพื่อสะสมลงใบสั่งจ่าย</label>
                                 <input type="text" id="outboundSn" class="form-control mono" style="font-weight:700; font-size:1.1rem;" placeholder="🎯 ยิงสแกน S/N แล้วกด Enter..." autocomplete="off">
                             </div>
@@ -1098,26 +1176,85 @@ date_default_timezone_set('Asia/Bangkok');
                     <!-- Step 3: View Shelves & Slots Inside Selected Bay or DOCK -->
                     <div style="font-size:0.85rem; font-weight:700; color:var(--text-sub); margin-bottom:0.5rem; display:flex; justify-content:space-between; align-items:center;">
                         <span>3. รายการ S/N ทั้งหมดในพื้นที่ที่เลือก:</span>
-                        <span id="bayCapacityInfoText" class="mono" style="color:var(--primary); font-weight:700;"></span>
+                        <span id="bayCapacityInfoText" class="mono" style="color:var(--primary-text); font-weight:700;"></span>
                     </div>
 
                     <div id="rackSlotsGrid" class="rack-slots-grid"></div>
                 </div>
             </section>
 
-            <!-- VIEW 5: WAREHOUSE LOCATION CONFIG & ADMIN USER MANAGEMENT (UPDATED REALTIME SUPABASE USER CONTROL) -->
+            <!-- VIEW 5: USER ACTIVITY AUDIT LOGS VIEW -->
+            <section id="view-activities" class="view-section">
+                <div class="settings-hero-banner" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);">
+                    <div>
+                        <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+                            <span style="background:rgba(255,255,255,0.15); padding:4px 12px; border-radius:20px; font-size:0.75rem; font-weight:700; color:#a5b4fc;" class="mono">
+                                <i class="fa-solid fa-clock-rotate-left"></i> AUDIT TRAIL LOGS
+                            </span>
+                        </div>
+                        <h2 style="font-size:1.4rem; font-weight:800; margin-bottom:4px;">ประวัติการใช้งานและกิจกรรมผู้ใช้ (User Activity Logs)</h2>
+                        <p style="font-size:0.85rem; color:#cbd5e1;">ตรวจสอบการเข้าถึงหน้าเว็บ, การกดเปลี่ยนเมนู, การรับเข้า/ตัดจ่าย, การย้ายพิกัด และการลบข้อมูลแบบ Realtime</p>
+                    </div>
+                    <button class="btn btn-sm btn-secondary" style="background:rgba(255,255,255,0.1); border-color:rgba(255,255,255,0.2); color:#fff;" onclick="loadUserActivityLogsFromDB()">
+                        <i class="fa-solid fa-rotate"></i> ดึงประวัติล่าสุด
+                    </button>
+                </div>
+
+                <div class="settings-section-card">
+                    <div style="display:flex; gap:0.6rem; flex-wrap:wrap; margin-bottom:1rem; align-items:center; justify-content:space-between; background:var(--bg-subtle); padding:0.8rem; border-radius:var(--radius-md); border:1px solid var(--border-color);">
+                        <div style="display:flex; gap:0.6rem; flex-wrap:wrap; flex:1;">
+                            <input type="text" id="logSearchInput" class="form-control" style="max-width:250px;" placeholder="🔍 ค้นหาผู้ใช้, S/N, หรือกิจกรรม..." oninput="filterActivityLogs()">
+                            
+                            <select id="logUserSelect" class="form-select mono" style="max-width:180px;" onchange="filterActivityLogs()">
+                                <option value="ALL">👤 ผู้ใช้ทุกคน (All Users)</option>
+                            </select>
+
+                            <select id="logTypeSelect" class="form-select" style="max-width:200px;" onchange="filterActivityLogs()">
+                                <option value="ALL">⚡ ประเภทกิจกรรมทั้งหมด</option>
+                                <option value="NAVIGATION">🧭 การกดเข้าหน้าเมนู</option>
+                                <option value="INBOUND">📥 การสแกนรับเข้าสินค้า</option>
+                                <option value="OUTBOUND">📤 การสแกนตัดจ่ายสินค้า</option>
+                                <option value="RELOCATE">🔀 การย้ายพิกัดสินค้า</option>
+                                <option value="DELETE">🗑️ การลบข้อมูล S/N</option>
+                                <option value="AUTH">🔑 การเข้าสู่ระบบ / เปลี่ยนรหัส</option>
+                            </select>
+                        </div>
+                        <span id="logTotalBadge" class="status-badge">0 ประวัติ</span>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="modern-table">
+                            <thead>
+                                <tr>
+                                    <th style="width:60px; text-align:center;">#</th>
+                                    <th style="width:160px;"><i class="fa-solid fa-calendar-clock"></i> วัน-เวลา</th>
+                                    <th style="width:160px;"><i class="fa-solid fa-user"></i> ผู้ใช้งาน (User)</th>
+                                    <th style="width:130px;"><i class="fa-solid fa-layer-group"></i> ประเภท</th>
+                                    <th><i class="fa-solid fa-align-left"></i> รายละเอียดการใช้งาน</th>
+                                    <th style="width:160px;"><i class="fa-solid fa-barcode"></i> S/N ที่เกี่ยวข้อง</th>
+                                </tr>
+                            </thead>
+                            <tbody id="activityLogsTableBody">
+                                <tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> กำลังดึงประวัติการใช้งานจาก Supabase DB...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW 6: WAREHOUSE LOCATION CONFIG & ADMIN USER MANAGEMENT -->
             <section id="view-settings" class="view-section">
                 
                 <!-- Modern Hero Banner -->
                 <div class="settings-hero-banner">
                     <div>
                         <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
-                            <span style="background:rgba(255,255,255,0.15); padding:4px 12px; border-radius:20px; font-size:0.75rem; font-weight:700; letter-spacing:0.5px; color:#60a5fa;" class="mono">
+                            <span style="background:rgba(255,255,255,0.15); padding:4px 12px; border-radius:20px; font-size:0.75rem; font-weight:700; letter-spacing:0.5px; color:#818cf8;" class="mono">
                                 <i class="fa-solid fa-shield-halved"></i> ADMIN AUTHORIZED ONLY
                             </span>
                         </div>
                         <h2 style="font-size:1.4rem; font-weight:800; margin-bottom:4px;">ตั้งค่าพิกัดคลังสินค้า และ จัดการผู้ใช้งาน</h2>
-                        <p style="font-size:0.85rem; color:#94a3b8; font-weight:400;">จัดการความจุแถวจัดเก็บ (Aisles) โครงสร้างชั้นวาง และสิทธิ์ผู้ใช้งานทั้งหมดในระบบผ่าน Supabase DB Realtime</p>
+                        <p style="font-size:0.85rem; color:#9ca3af; font-weight:400;">จัดการความจุแถวจัดเก็บ (Aisles) โครงสร้างชั้นวาง และสิทธิ์ผู้ใช้งานทั้งหมดในระบบผ่าน Supabase DB Realtime</p>
                     </div>
                     <div style="display:flex; align-items:center; gap:10px;">
                         <button class="btn btn-sm btn-secondary" style="background:rgba(255,255,255,0.1); border-color:rgba(255,255,255,0.2); color:#fff;" onclick="loadWarehouseConfigsFromDB(); loadUsersFromDB(); renderAisleSettingsTable();">
@@ -1132,7 +1269,7 @@ date_default_timezone_set('Asia/Bangkok');
                         <div class="card-title" style="font-size:1.1rem; color:var(--text-main);">
                             <i class="fa-solid fa-layer-group" style="color:var(--primary);"></i> ตั้งค่าโครงสร้างแถวจัดเก็บ (Aisle Configurations)
                         </div>
-                        <span class="status-badge" style="background:var(--primary-light); color:var(--primary); border-color:var(--primary-border);">
+                        <span class="status-badge" style="background:var(--primary-light); color:var(--primary-text); border-color:var(--primary-border);">
                             <i class="fa-solid fa-database"></i> Realtime Sync DB
                         </span>
                     </div>
@@ -1189,12 +1326,13 @@ date_default_timezone_set('Asia/Bangkok');
                                     <th>ชื่อ-นามสกุล</th>
                                     <th>แผนก (Department)</th>
                                     <th>ระดับสิทธิ์ (Role)</th>
+                                    <th style="text-align:center; width:130px;"><i class="fa-solid fa-eye"></i> ดูประวัติ</th>
                                     <th style="text-align:center; width:150px;">แก้ไขข้อมูล/รหัส</th>
                                     <th style="text-align:center; width:90px;">ลบผู้ใช้</th>
                                 </tr>
                             </thead>
                             <tbody id="userManagementTableBody">
-                                <tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> กำลังโหลดข้อมูลผู้ใช้งานจาก Supabase...</td></tr>
+                                <tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> กำลังโหลดข้อมูลผู้ใช้งานจาก Supabase...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -1228,17 +1366,76 @@ date_default_timezone_set('Asia/Bangkok');
         </main>
     </div>
 
+    <!-- MODAL: USER AUDIT LOG HISTORY POPUP (ปุ่มรูปลูกตา ดูประวัติกิจกรรมผู้ใช้งานแบบเรียลไทม์) -->
+    <div id="userHistoryAuditModal" class="modal-overlay" style="display:none;">
+        <div class="card" style="width: 860px; max-width: 95vw; max-height: 90vh; display:flex; flex-direction:column;">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="fa-solid fa-eye" style="color:var(--primary);"></i> 
+                    ประวัติการใช้งานเรียลไทม์: <span id="auditTargetUsername" class="mono font-bold" style="color:var(--primary-text);">-</span>
+                </div>
+                <button class="btn btn-secondary" style="padding:4px 8px;" onclick="closeUserHistoryAuditModal()">&times;</button>
+            </div>
+
+            <!-- User Info Bar -->
+            <div style="background:var(--bg-subtle); padding:10px 14px; border-radius:var(--radius-md); border:1px solid var(--border-color); margin-bottom:1rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                <div style="font-size:0.88rem; color:var(--text-main);">
+                    <strong>ชื่อ-นามสกุล:</strong> <span id="auditTargetFullName">-</span> | 
+                    <strong>แผนก:</strong> <span id="auditTargetDept">-</span> | 
+                    <strong>สิทธิ์:</strong> <span id="auditTargetRole" class="mono font-bold">-</span>
+                </div>
+                <button class="btn btn-sm btn-primary" onclick="refreshSingleUserLogs()"><i class="fa-solid fa-rotate"></i> ดึงข้อมูลเรียลไทม์</button>
+            </div>
+
+            <!-- Filter Controls in Audit Modal -->
+            <div style="display:flex; gap:0.6rem; margin-bottom:1rem; flex-wrap:wrap;">
+                <input type="text" id="auditModalSearchInput" class="form-control" placeholder="🔍 ค้นหาในประวัติผู้ใช้คนนี้..." oninput="filterIndividualAuditLogs()">
+                <select id="auditModalTypeFilter" class="form-select" style="max-width:200px;" onchange="filterIndividualAuditLogs()">
+                    <option value="ALL">⚡ กิจกรรมทั้งหมด</option>
+                    <option value="INBOUND">📥 รับเข้าสินค้า</option>
+                    <option value="OUTBOUND">📤 ตัดจ่ายสินค้า</option>
+                    <option value="RELOCATE">🔀 ย้ายพิกัดสินค้า</option>
+                    <option value="DELETE">🗑️ ลบข้อมูล</option>
+                    <option value="NAVIGATION">🧭 เปิดดูหน้าเมนู</option>
+                    <option value="AUTH">🔑 เข้าระบบ/สิทธิ์</option>
+                </select>
+            </div>
+
+            <!-- Logs Table inside Modal -->
+            <div class="table-responsive" style="flex:1; max-height:450px;">
+                <table class="modern-table">
+                    <thead>
+                        <tr>
+                            <th style="width:50px; text-align:center;">ลำดับ</th>
+                            <th style="width:160px;"><i class="fa-solid fa-calendar-clock"></i> วัน-เวลาที่ใช้งาน</th>
+                            <th style="width:120px;"><i class="fa-solid fa-layer-group"></i> ประเภท</th>
+                            <th><i class="fa-solid fa-list-check"></i> รายละเอียดกิจกรรมที่ทำทั้งหมด</th>
+                            <th style="width:150px;"><i class="fa-solid fa-barcode"></i> S/N ที่เกี่ยวข้อง</th>
+                        </tr>
+                    </thead>
+                    <tbody id="individualAuditLogsTableBody">
+                        <tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> กำลังโหลดข้อมูลประวัติจาก Supabase DB...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="margin-top:1rem; text-align:right;">
+                <button class="btn btn-secondary" onclick="closeUserHistoryAuditModal()">ปิดหน้าต่าง</button>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL: STRICT ADMIN AUTHENTICATION GUARD LOCK -->
     <div id="adminGuardModal" class="modal-overlay" style="display:none;">
         <div class="card" style="width: 440px; max-width: 90vw; text-align:center; border-top: 5px solid var(--danger); padding:2rem;">
-            <div style="width:65px; height:65px; background:var(--danger-light); color:var(--danger); border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:1.8rem; margin-bottom:1rem; border:1px solid #fca5a5;">
+            <div style="width:65px; height:65px; background:var(--danger-light); color:var(--danger); border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:1.8rem; margin-bottom:1rem; border:1px solid rgba(239, 68, 68, 0.3);">
                 <i class="fa-solid fa-user-shield"></i>
             </div>
             <h3 style="font-weight: 800; font-size: 1.25rem; color: var(--text-main); margin-bottom: 6px;">ยืนยันสิทธิ์ผู้ดูแลระบบ (Admin Only)</h3>
             <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:1.2rem;">สงวนสิทธิ์เฉพาะผู้ดูแลระบบที่มีบทบาท Admin เท่านั้น กรุณากรอกรหัสผ่านเพื่อยืนยันตัวตน</p>
             
-            <div style="background:var(--bg-subtle); padding:8px; border-radius:8px; margin-bottom:1.2rem; border:1px solid var(--border-color); font-size:0.85rem;">
-                บัญชีปัจจุบัน: <strong id="adminGuardAccountName" class="mono" style="color:var(--primary);">admin</strong>
+            <div style="background:var(--bg-subtle); padding:8px; border-radius:8px; margin-bottom:1.2rem; border:1px solid var(--border-color); font-size:0.85rem; color:var(--text-main);">
+                บัญชีปัจจุบัน: <strong id="adminGuardAccountName" class="mono" style="color:var(--primary-text);">admin</strong>
             </div>
 
             <form onsubmit="verifyAdminGuardPassword(event)">
@@ -1254,7 +1451,7 @@ date_default_timezone_set('Asia/Bangkok');
         </div>
     </div>
 
-    <!-- MODAL: CHANGE PASSWORD (UPDATED SUPABASE DB REALTIME SYNC) -->
+    <!-- MODAL: CHANGE PASSWORD -->
     <div id="changePasswordModal" class="modal-overlay" style="display:none;">
         <div class="card" style="width: 420px; max-width: 90vw;">
             <div class="card-header">
@@ -1284,7 +1481,7 @@ date_default_timezone_set('Asia/Bangkok');
         </div>
     </div>
 
-    <!-- MODAL: CREATE / EDIT USER (UPDATED SUPABASE REALTIME SYNC WITH DEPARTMENT FIELD) -->
+    <!-- MODAL: CREATE / EDIT USER (UPDATED SUPABASE REALTIME SYNC) -->
     <div id="createUserModal" class="modal-overlay" style="display:none;">
         <div class="card" style="width: 460px; max-width: 90vw;">
             <div class="card-header">
@@ -1295,7 +1492,7 @@ date_default_timezone_set('Asia/Bangkok');
             <form onsubmit="submitUserForm(event)">
                 <input type="hidden" id="userFormId">
                 <div class="form-group">
-                    <label>Username (ชื่อใช้เข้าสู่ระบบ - แก้ไขได้)</label>
+                    <label>Username (ชื่อใช้เข้าสู่ระบบ - ภาษาอังกฤษและตัวเลขเท่านั้น)</label>
                     <input type="text" id="userFormUsername" class="form-control mono" required pattern="[a-zA-Z0-9_-]+" title="ใช้ตัวอักษรภาษาอังกฤษ ตัวเลข และ - _ ได้เท่านั้น" autocomplete="off">
                 </div>
                 <div class="form-group">
@@ -1336,9 +1533,7 @@ date_default_timezone_set('Asia/Bangkok');
 
             <div style="background:var(--danger-light); padding:1rem; border-radius:var(--radius-md); margin-bottom:1.25rem; font-size:0.88rem; color:var(--danger);">
                 <div style="font-weight:700; margin-bottom:6px;"><i class="fa-solid fa-circle-exclamation"></i> คุณแน่ใจหรือไม่ที่จะลบรายการดังต่อไปนี้?</div>
-                <div id="deleteConfirmModalDetails" class="mono font-bold" style="max-height:120px; overflow-y:auto; background:#fff; padding:8px; border-radius:6px; border:1px solid #fca5a5; margin-top:6px;">
-                    <!-- รายการที่จะถูกลบ -->
-                </div>
+                <div id="deleteConfirmModalDetails" class="mono font-bold" style="max-height:120px; overflow-y:auto; background:var(--bg-subtle); padding:8px; border-radius:6px; border:1px solid rgba(239, 68, 68, 0.3); margin-top:6px; color:var(--text-main);"></div>
             </div>
 
             <div style="display:flex; gap:0.5rem;">
@@ -1371,8 +1566,8 @@ date_default_timezone_set('Asia/Bangkok');
                 </div>
             </div>
 
-            <div style="background:#f8fafc; border:1px solid var(--border-color); padding:1.2rem; border-radius:var(--radius-md); margin-bottom:1rem; color:#000;">
-                <div style="font-weight:700; margin-bottom:0.5rem; font-size:0.85rem;"><i class="fa-solid fa-eye"></i> ตัวอย่างโครงสร้างสติ๊กเกอร์ก่อนพิมพ์ (1 S/N ต่อ 1 สติ๊กเกอร์ มีกรอบชัดเจน):</div>
+            <div style="background:#ffffff; border:1px solid var(--border-strong); padding:1.2rem; border-radius:var(--radius-md); margin-bottom:1rem; color:#000;">
+                <div style="font-weight:700; margin-bottom:0.5rem; font-size:0.85rem; color:#000;"><i class="fa-solid fa-eye"></i> ตัวอย่างโครงสร้างสติ๊กเกอร์ก่อนพิมพ์ (1 S/N ต่อ 1 สติ๊กเกอร์ มีกรอบชัดเจน):</div>
                 <div id="barcodePreviewArea" class="thermal-label-container"></div>
             </div>
 
@@ -1391,8 +1586,8 @@ date_default_timezone_set('Asia/Bangkok');
                 <button class="btn btn-secondary" style="padding:4px 8px;" onclick="closeRelocateModal()">&times;</button>
             </div>
 
-            <div style="background:var(--bg-subtle); padding:0.8rem; border-radius:var(--radius-md); margin-bottom:1rem; font-size:0.85rem;">
-                <div><strong>S/N:</strong> <span id="relocateItemSn" class="mono font-bold" style="color:var(--primary);"></span></div>
+            <div style="background:var(--bg-subtle); padding:0.8rem; border-radius:var(--radius-md); margin-bottom:1rem; font-size:0.85rem; color:var(--text-main);">
+                <div><strong>S/N:</strong> <span id="relocateItemSn" class="mono font-bold" style="color:var(--primary-text);"></span></div>
                 <div><strong>รุ่น:</strong> <span id="relocateItemName"></span></div>
                 <div><strong>พิกัดปัจจุบัน:</strong> <span id="relocateItemCurrentLoc" class="badge-location mono"></span></div>
             </div>
@@ -1402,7 +1597,7 @@ date_default_timezone_set('Asia/Bangkok');
             <div class="form-group">
                 <label style="display:flex; justify-content:space-between; align-items:center;">
                     <span>เลือกพิกัดจัดเก็บใหม่ (New Location):</span>
-                    <span style="font-size:0.75rem; color:var(--primary); font-weight:700;"><i class="fa-solid fa-wand-magic-sparkles"></i> สุ่มช่องว่างอัตโนมัติ</span>
+                    <span style="font-size:0.75rem; color:var(--primary-text); font-weight:700;"><i class="fa-solid fa-wand-magic-sparkles"></i> สุ่มช่องว่างอัตโนมัติ</span>
                 </label>
                 <div class="form-grid">
                     <div class="form-group">
@@ -1424,7 +1619,7 @@ date_default_timezone_set('Asia/Bangkok');
                 </div>
             </div>
 
-            <div style="font-size:0.88rem; font-weight:700; color:var(--primary); margin-bottom:1rem; background:var(--primary-light); padding:8px 12px; border-radius:8px; border:1px solid var(--primary-border);">
+            <div style="font-size:0.88rem; font-weight:700; color:var(--primary-text); margin-bottom:1rem; background:var(--primary-light); padding:8px 12px; border-radius:8px; border:1px solid var(--primary-border);">
                 พิกัดใหม่ที่จะบันทึก: <span id="relocatePreviewBadge" class="badge-location mono">DOCK</span>
             </div>
 
@@ -1445,8 +1640,8 @@ date_default_timezone_set('Asia/Bangkok');
                 <button class="btn btn-secondary" style="padding:4px 8px;" onclick="closeBatchRelocateModal()">&times;</button>
             </div>
 
-            <div style="background:var(--primary-light); padding:0.8rem; border-radius:var(--radius-md); margin-bottom:1rem; font-size:0.88rem; border:1px solid var(--primary-border);">
-                <div>รายการที่เลือกย้ายทั้งหมด: <strong id="batchRelocateTotalCount" style="color:var(--primary);">0</strong> รายการ</div>
+            <div style="background:var(--primary-light); padding:0.8rem; border-radius:var(--radius-md); margin-bottom:1rem; font-size:0.88rem; border:1px solid var(--primary-border); color:var(--text-main);">
+                <div>รายการที่เลือกย้ายทั้งหมด: <strong id="batchRelocateTotalCount" style="color:var(--primary-text);">0</strong> รายการ</div>
                 <div style="font-size:0.78rem; color:var(--text-sub); margin-top:4px;">ระบบจะเรียงกระจายเข้าล็อก/ช่องว่างที่ว่างให้อัตโนมัติในแถวเป้าหมาย โดยไม่ซ้ำช่องเดิม</div>
             </div>
 
@@ -1506,6 +1701,66 @@ date_default_timezone_set('Asia/Bangkok');
     </div>
 
     <script>
+        // --- NEW FEATURE: THEME SWITCHER SYSTEM (LIGHT & DARK THEMES) ---
+        function initThemeSystem() {
+            const savedTheme = localStorage.getItem('WMS_THEME_MODE') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            updateThemeToggleUI(savedTheme);
+        }
+
+        function toggleAppTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+            const nextTheme = (currentTheme === 'light') ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', nextTheme);
+            localStorage.setItem('WMS_THEME_MODE', nextTheme);
+            updateThemeToggleUI(nextTheme);
+            showToast(`🎨 เปลี่ยนธีมการแสดงผลเป็น: ${nextTheme === 'light' ? 'โหมดสว่าง (Light Mode)' : 'โหมดมืด (Dark Mode)'}`);
+        }
+
+        function updateThemeToggleUI(theme) {
+            const textElem = document.getElementById('themeToggleText');
+            const sunIcon = document.getElementById('themeIconSun');
+            const moonIcon = document.getElementById('themeIconMoon');
+
+            if (theme === 'light') {
+                if (textElem) textElem.textContent = 'โหมดสว่าง';
+                if (sunIcon) sunIcon.style.display = 'inline-block';
+                if (moonIcon) moonIcon.style.display = 'none';
+            } else {
+                if (textElem) textElem.textContent = 'โหมดมืด';
+                if (sunIcon) sunIcon.style.display = 'none';
+                if (moonIcon) moonIcon.style.display = 'inline-block';
+            }
+        }
+
+        // --- NEW FEATURE: AI VOICE AUDIO ALERTS ENGINE (SPEECH SYNTHESIS) ---
+        let isVoiceAlertEnabled = true;
+
+        function toggleVoiceAudioAlert() {
+            isVoiceAlertEnabled = !isVoiceAlertEnabled;
+            const btn = document.getElementById('voiceToggleBtn');
+            if (isVoiceAlertEnabled) {
+                btn.innerHTML = `<i class="fa-solid fa-volume-high" style="color:var(--success);"></i> AI Voice On`;
+                speakThaiText("เปิดเสียงอ่านตอบรับเรียบร้อยค่ะ");
+            } else {
+                btn.innerHTML = `<i class="fa-solid fa-volume-xmark" style="color:var(--danger);"></i> AI Voice Off`;
+            }
+        }
+
+        function speakThaiText(text) {
+            if (!isVoiceAlertEnabled || !('speechSynthesis' in window)) return;
+            try {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'th-TH';
+                utterance.rate = 1.05;
+                utterance.pitch = 1.0;
+                window.speechSynthesis.speak(utterance);
+            } catch(e) {
+                console.log('Voice synthesis error:', e);
+            }
+        }
+
         // --- XSS PROTECTION & SANITIZATION UTILITIES ---
         function escapeHTML(str) {
             if (typeof str !== 'string') return str;
@@ -1524,6 +1779,28 @@ date_default_timezone_set('Asia/Bangkok');
             auth: { persistSession: false }
         });
 
+        // --- AUDIT TRAIL LOGGING ENGINE (บันทึกกิจกรรมผู้ใช้เข้า SUPABASE DB แบบเรียลไทม์) ---
+        async function logUserActivity(actionType, description, targetSn = null) {
+            if (!currentUser) return;
+
+            const payload = {
+                username: currentUser.username,
+                full_name: currentUser.name || currentUser.username,
+                role: currentUser.role || 'user',
+                action_type: actionType,
+                description: description,
+                target_sn: targetSn,
+                created_at: new Date().toISOString()
+            };
+
+            try {
+                const { error } = await _supabase.from('user_activities').insert([payload]);
+                if (error) console.warn('Activity logging warning:', error.message);
+            } catch(e) {
+                console.error('Activity logging exception:', e);
+            }
+        }
+
         // --- AUTHENTICATION & MULTI-USER SYSTEM STATE ---
         const DEFAULT_USERS = [
             { id: 1, username: 'admin', password: '123456', name: 'Super Admin (ผู้ดูแลระบบ)', department: 'ฝ่ายบริหาร IT', role: 'admin' },
@@ -1531,11 +1808,13 @@ date_default_timezone_set('Asia/Bangkok');
         ];
 
         let systemUsers = [];
+        let globalActivityLogs = [];
+        let currentInspectedUserLogs = [];
+        let currentInspectedUser = null;
         let currentUser = null;
-        let isAdminAuthenticatedSession = false; // Flag จำสิทธิ์ Admin บังคับรหัสผ่านเข้าส่วนตั้งค่า
+        let isAdminAuthenticatedSession = false;
         let loginFailedAttempts = 0;
 
-        // AUTO LOGOUT TIMER CONFIG (15 MINS INACTIVE AUTO DISCONNECT)
         const AUTO_LOGOUT_TIMEOUT_MS = 15 * 60 * 1000; // 15 นาที
         let autoLogoutTimer = null;
 
@@ -1576,7 +1855,6 @@ date_default_timezone_set('Asia/Bangkok');
                     }));
                     localStorage.setItem('WMS_USERS', JSON.stringify(systemUsers));
                 } else {
-                    // หากในตาราง profiles ยังว่างเปล่า ให้ใส่ค่า Default เริ่มต้นเข้า DB
                     systemUsers = [...DEFAULT_USERS];
                     for(let u of DEFAULT_USERS) {
                         await _supabase.from('profiles').upsert({
@@ -1584,7 +1862,8 @@ date_default_timezone_set('Asia/Bangkok');
                             password: u.password,
                             full_name: u.name,
                             department: u.department,
-                            role: u.role
+                            role: u.role,
+                            created_at: new Date().toISOString()
                         }, { onConflict: 'username' });
                     }
                 }
@@ -1595,6 +1874,7 @@ date_default_timezone_set('Asia/Bangkok');
             }
 
             renderUserManagementTable();
+            populateLogUserDropdown();
         }
 
         async function initAuthSystem() {
@@ -1604,8 +1884,6 @@ date_default_timezone_set('Asia/Bangkok');
             if (activeSession) {
                 try {
                     currentUser = JSON.parse(activeSession);
-                    
-                    // Sync ล่าสุดจาก systemUsers ที่ดึงมาจาก Supabase
                     const matchedUser = systemUsers.find(u => u.username.toLowerCase() === currentUser.username.toLowerCase());
                     if(matchedUser) {
                         currentUser = matchedUser;
@@ -1647,7 +1925,6 @@ date_default_timezone_set('Asia/Bangkok');
 
             showToast("⏳ กำลังตรวจสอบสิทธิ์จากฐานข้อมูล Supabase DB...");
 
-            // 1. ค้นหาผู้ใช้จาก DB Direct
             let foundUser = null;
             try {
                 const { data, error } = await _supabase
@@ -1671,7 +1948,6 @@ date_default_timezone_set('Asia/Bangkok');
                 console.warn('DB Login Query Error:', e);
             }
 
-            // Fallback เผื่อ DB ออฟไลน์
             if(!foundUser) {
                 foundUser = systemUsers.find(u => u.username.toLowerCase() === uInput.toLowerCase() && u.password === pInput);
             }
@@ -1691,10 +1967,14 @@ date_default_timezone_set('Asia/Bangkok');
                 resetAutoLogoutTimer();
                 initSecurityListeners();
                 playSuccessSound();
+                speakThaiText(`ยินดีต้อนรับ คุณ ${currentUser.name}`);
                 showToast(`🎉 ยืนยันสิทธิ์จาก DB สำเร็จ! ยินดีต้อนรับคุณ ${escapeHTML(currentUser.name)}`);
+
+                await logUserActivity('AUTH', `เข้าสู่ระบบสำเร็จ (IP: Client Browser)`);
             } else {
                 loginFailedAttempts++;
                 playErrorSound();
+                speakThaiText("รหัสผ่านไม่ถูกต้องค่ะ");
                 if (loginFailedAttempts >= 5) {
                     document.getElementById('loginSubmitBtn').disabled = true;
                     document.getElementById('loginErrorMsg').textContent = '🚨 กรอกรหัสผิด 5 ครั้ง! ปิดการเข้าถึงชั่วคราว 30 วินาที';
@@ -1712,8 +1992,11 @@ date_default_timezone_set('Asia/Bangkok');
             }
         }
 
-        function handleSystemLogout(reasonMsg = null) {
+        async function handleSystemLogout(reasonMsg = null) {
             if (reasonMsg || confirm("คุณแน่ใจหรือไม่ที่จะออกจากระบบ?")) {
+                if (currentUser) {
+                    await logUserActivity('AUTH', `ออกจากระบบ ${reasonMsg ? '(Auto Timeout)' : ''}`);
+                }
                 sessionStorage.removeItem('WMS_ACTIVE_USER');
                 currentUser = null;
                 isAdminAuthenticatedSession = false;
@@ -1734,7 +2017,6 @@ date_default_timezone_set('Asia/Bangkok');
             document.getElementById('confirmNewPasswordInput').value = '';
         }
 
-        // --- UPDATED CHANGE PASSWORD SYNC SUPABASE REALTIME DB ---
         async function submitChangePassword(e) {
             e.preventDefault();
             const oldP = document.getElementById('oldPasswordInput').value;
@@ -1755,7 +2037,6 @@ date_default_timezone_set('Asia/Bangkok');
 
             showToast("⏳ กำลังบันทึกรหัสผ่านใหม่ลง Supabase DB...");
 
-            // 1. อัปเดตลง Supabase DB
             const { error } = await _supabase
                 .from('profiles')
                 .update({ password: newP })
@@ -1765,7 +2046,6 @@ date_default_timezone_set('Asia/Bangkok');
                 console.error("Change Password DB Error:", error);
             }
 
-            // 2. อัปเดตใน System Memory & Current Session State
             const uIdx = systemUsers.findIndex(u => u.username === currentUser.username);
             if (uIdx !== -1) {
                 systemUsers[uIdx].password = newP;
@@ -1779,18 +2059,20 @@ date_default_timezone_set('Asia/Bangkok');
                 isAdminAuthenticatedSession = true;
             }
 
+            await logUserActivity('AUTH', `เปลี่ยนรหัสผ่านส่วนตัวสำเร็จ`);
             playSuccessSound();
             showToast("⚡ เปลี่ยนรหัสผ่านและซิงค์ข้อมูลลง Supabase DB เรียบร้อยแล้ว!");
             closeChangePasswordModal();
         }
 
+        // --- RENDER USER MANAGEMENT TABLE WITH EYE ICON BUTTON ---
         function renderUserManagementTable() {
             const tbody = document.getElementById('userManagementTableBody');
             if(!tbody) return;
             tbody.innerHTML = '';
 
             if (systemUsers.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">ไม่พบรายการผู้ใช้งาน</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted);">ไม่พบรายการผู้ใช้งาน</td></tr>`;
                 return;
             }
 
@@ -1798,20 +2080,122 @@ date_default_timezone_set('Asia/Bangkok');
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td style="text-align:center; font-weight:700;" class="mono">${idx + 1}</td>
-                    <td><strong class="mono" style="color:var(--primary); font-size:0.92rem;">${escapeHTML(u.username)}</strong></td>
+                    <td><strong class="mono" style="color:var(--primary-text); font-size:0.92rem;">${escapeHTML(u.username)}</strong></td>
                     <td><span style="font-weight:600;">${escapeHTML(u.name)}</span></td>
                     <td><span style="color:var(--text-sub); font-size:0.85rem;"><i class="fa-solid fa-building-user" style="color:var(--primary); margin-right:4px;"></i>${escapeHTML(u.department || 'แผนกคลังสินค้า')}</span></td>
                     <td>
-                        <span class="status-badge" style="font-size:0.75rem; background:${u.role === 'admin' ? 'var(--primary-light)' : 'var(--bg-subtle)'}; color:${u.role === 'admin' ? 'var(--primary)' : 'var(--text-sub)'}; border-color:${u.role === 'admin' ? 'var(--primary-border)' : 'var(--border-color)'};">
+                        <span class="status-badge" style="font-size:0.75rem; background:${u.role === 'admin' ? 'var(--primary-light)' : 'var(--bg-subtle)'}; color:${u.role === 'admin' ? 'var(--primary-text)' : 'var(--text-sub)'}; border-color:${u.role === 'admin' ? 'var(--primary-border)' : 'var(--border-color)'};">
                             ${u.role === 'admin' ? '⚡ Super Admin' : '👤 User General'}
                         </span>
                     </td>
                     <td style="text-align:center;">
-                        <button class="btn btn-sm btn-secondary" onclick="openEditUserModal('${escapeHTML(u.id)}')"><i class="fa-solid fa-user-pen" style="color:var(--primary);"></i> แก้ไขข้อมูล/รหัส</button>
+                        <button class="btn btn-sm btn-primary" onclick="openUserHistoryAuditModal('${escapeHTML(u.username)}')" title="ดูประวัติการใช้งานแบบเรียลไทม์">
+                            <i class="fa-solid fa-eye"></i> ดูประวัติ
+                        </button>
+                    </td>
+                    <td style="text-align:center;">
+                        <button class="btn btn-sm btn-secondary" onclick="openEditUserModal('${escapeHTML(u.id)}')"><i class="fa-solid fa-user-pen" style="color:var(--primary);"></i> แก้ไข</button>
                     </td>
                     <td style="text-align:center;">
                         <button class="btn btn-sm btn-danger" ${u.username === 'admin' ? 'disabled' : ''} onclick="deleteUserAccount('${escapeHTML(u.id)}', '${escapeHTML(u.username)}')"><i class="fa-solid fa-trash-can"></i></button>
                     </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // --- OPEN & INSPECT INDIVIDUAL USER HISTORY (POPUP MODAL) ---
+        async function openUserHistoryAuditModal(username) {
+            const userObj = systemUsers.find(u => u.username === username);
+            if(!userObj) return;
+
+            currentInspectedUser = userObj;
+            document.getElementById('auditTargetUsername').textContent = userObj.username;
+            document.getElementById('auditTargetFullName').textContent = userObj.name;
+            document.getElementById('auditTargetDept').textContent = userObj.department || 'แผนกคลังสินค้า';
+            document.getElementById('auditTargetRole').textContent = userObj.role ? userObj.role.toUpperCase() : 'USER';
+
+            document.getElementById('auditModalSearchInput').value = '';
+            document.getElementById('auditModalTypeFilter').value = 'ALL';
+
+            document.getElementById('userHistoryAuditModal').style.display = 'flex';
+            await refreshSingleUserLogs();
+        }
+
+        function closeUserHistoryAuditModal() {
+            document.getElementById('userHistoryAuditModal').style.display = 'none';
+        }
+
+        async function refreshSingleUserLogs() {
+            if(!currentInspectedUser) return;
+            const tbody = document.getElementById('individualAuditLogsTableBody');
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> กำลังโหลดข้อมูลประวัติเรียลไทม์จาก Supabase DB...</td></tr>`;
+
+            try {
+                const { data, error } = await _supabase
+                    .from('user_activities')
+                    .select('*')
+                    .eq('username', currentInspectedUser.username)
+                    .order('created_at', { ascending: false })
+                    .limit(300);
+
+                if(error) {
+                    console.warn('Fetch user logs error:', error.message);
+                    currentInspectedUserLogs = [];
+                } else {
+                    currentInspectedUserLogs = data || [];
+                }
+                filterIndividualAuditLogs();
+            } catch(e) {
+                console.error('Fetch logs exception:', e);
+            }
+        }
+
+        function filterIndividualAuditLogs() {
+            const q = document.getElementById('auditModalSearchInput').value.toLowerCase().trim();
+            const filterType = document.getElementById('auditModalTypeFilter').value;
+
+            const filtered = currentInspectedUserLogs.filter(log => {
+                const matchesQ = (
+                    (log.description && log.description.toLowerCase().includes(q)) ||
+                    (log.target_sn && log.target_sn.toLowerCase().includes(q))
+                );
+                const matchesType = (filterType === 'ALL' || log.action_type === filterType);
+
+                return matchesQ && matchesType;
+            });
+
+            renderIndividualAuditTable(filtered);
+        }
+
+        function renderIndividualAuditTable(logs) {
+            const tbody = document.getElementById('individualAuditLogsTableBody');
+            tbody.innerHTML = '';
+
+            if (logs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-muted);">ยังไม่มีบันทึกประวัติการใช้งานของผู้ใช้คนนี้ในระบบ</td></tr>`;
+                return;
+            }
+
+            logs.forEach((log, idx) => {
+                let badgeClass = 'nav';
+                let typeText = 'เข้าดูหน้าเว็บ';
+
+                if (log.action_type === 'INBOUND') { badgeClass = 'inbound'; typeText = 'รับเข้าสินค้า'; }
+                else if (log.action_type === 'OUTBOUND') { badgeClass = 'outbound'; typeText = 'ตัดจ่ายสินค้า'; }
+                else if (log.action_type === 'DELETE') { badgeClass = 'delete'; typeText = 'ลบข้อมูล'; }
+                else if (log.action_type === 'RELOCATE') { badgeClass = 'relocate'; typeText = 'ย้ายพิกัด'; }
+                else if (log.action_type === 'AUTH') { badgeClass = 'auth'; typeText = 'เข้าสู่ระบบ/สิทธิ์'; }
+
+                const dateStr = log.created_at ? new Date(log.created_at).toLocaleString('th-TH') : '-';
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="text-align:center; font-weight:700;" class="mono">${idx + 1}</td>
+                    <td style="font-size:0.78rem; color:var(--text-muted);">${escapeHTML(dateStr)}</td>
+                    <td><span class="badge-action ${badgeClass}">${typeText}</span></td>
+                    <td style="font-size:0.85rem; font-weight:500;">${escapeHTML(log.description || '-')}</td>
+                    <td><code class="mono font-bold" style="color:var(--primary-text);">${escapeHTML(log.target_sn || '-')}</code></td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -1825,7 +2209,7 @@ date_default_timezone_set('Asia/Bangkok');
             document.getElementById('userFormDepartment').value = 'แผนกคลังสินค้า';
             document.getElementById('userFormPassword').value = '';
             document.getElementById('userFormRole').value = 'user';
-            document.getElementById('userModalTitle').textContent = 'เพิ่มผู้ใช้งานใหม่ (Supabase DB Sync)';
+            document.getElementById('userModalTitle').textContent = 'เพิ่มผู้ใช้งานใหม่ (Supabase DB Realtime Sync)';
             document.getElementById('createUserModal').style.display = 'flex';
         }
 
@@ -1858,7 +2242,7 @@ date_default_timezone_set('Asia/Bangkok');
             const password = document.getElementById('userFormPassword').value.trim();
             const role = document.getElementById('userFormRole').value;
 
-            showToast("⏳ กำลังบันทึกผู้ใช้ลงใน Supabase DB...");
+            showToast("⏳ กำลังบันทึกข้อมูลผู้ใช้และประวัติลงใน Supabase DB...");
 
             const payload = {
                 username: username,
@@ -1872,30 +2256,28 @@ date_default_timezone_set('Asia/Bangkok');
             let dbError = null;
 
             if (id) {
-                // Update ใน Supabase DB
                 const { error } = await _supabase
                     .from('profiles')
                     .update(payload)
                     .eq('username', username);
                 dbError = error;
+                await logUserActivity('AUTH', `แก้ไขข้อมูลผู้ใช้: ${username} (${fullName}) [${role}]`);
             } else {
-                // Insert ใหม่ใน Supabase DB
+                payload.created_at = new Date().toISOString();
                 const { error } = await _supabase
                     .from('profiles')
                     .insert([payload]);
                 dbError = error;
+                await logUserActivity('AUTH', `สร้างเพิ่มผู้ใช้ใหม่เข้าฐานข้อมูล: ${username} (${fullName}) แผนก:${department} [${role}]`);
             }
 
             if(dbError) {
                 console.error("Save User DB Error:", dbError);
-                // Fallback Upsert ด้วย onConflict
                 await _supabase.from('profiles').upsert(payload, { onConflict: 'username' });
             }
 
-            // โหลดรายการผู้ใช้ใหม่จาก DB เพื่ออัปเดต UI ทันที
             await loadUsersFromDB();
 
-            // หากแก้ไขบัญชีของตัวเองที่กำลังใช้งานอยู่ ให้ปรับเปลี่ยน Session ทันที
             if(currentUser && currentUser.username.toLowerCase() === username.toLowerCase()) {
                 currentUser.name = fullName;
                 currentUser.department = department;
@@ -1906,6 +2288,7 @@ date_default_timezone_set('Asia/Bangkok');
             }
 
             playSuccessSound();
+            speakThaiText(`บันทึกผู้ใช้ ${fullName} เรียบร้อยแล้วค่ะ`);
             showToast("⚡ บันทึกและอัปเดตผู้ใช้งานเข้า Supabase DB เรียบร้อยแล้ว!");
             closeCreateUserModal();
         }
@@ -1928,6 +2311,7 @@ date_default_timezone_set('Asia/Bangkok');
                     console.error("Delete user error:", error);
                 }
 
+                await logUserActivity('AUTH', `ลบบัญชีผู้ใช้งานออกจากระบบ: ${username}`);
                 await loadUsersFromDB();
                 playSuccessSound();
                 showToast(`🗑️ ลบผู้ใช้งาน ${username} สำเร็จ`);
@@ -1981,7 +2365,6 @@ date_default_timezone_set('Asia/Bangkok');
         let pendingDeleteSn = null;
         let pendingDeleteId = null;
 
-        // Master Default Aisles Config
         const defaultMasterAisles = ['DOCK', 'A', 'B', 'C', 'D'];
         let aisleConfigs = {
             'DOCK': { bays: 1, shelves: 1, slots: 1 },
@@ -1996,12 +2379,12 @@ date_default_timezone_set('Asia/Bangkok');
         let currentSelectedAisle = 'A';
         let currentSelectedBay = '01';
 
-        // Sidebar Navigation Config
         let menuConfig = [
             { id: 'view-inventory', label: 'เช็คสต็อกสินค้า', icon: 'fa-list-check' },
             { id: 'view-inbound', label: 'รับสินค้าเข้าคลัง (Fast)', icon: 'fa-arrow-right-to-bracket' },
             { id: 'view-outbound', label: 'จ่ายสินค้าออกจากคลัง', icon: 'fa-truck-arrow-right' },
             { id: 'view-locations', label: 'ผังตำแหน่งคลังสินค้า (Drill-Down)', icon: 'fa-map-location-dot' },
+            { id: 'view-activities', label: 'ดูประวัติการใช้งาน (User Logs)', icon: 'fa-clock-rotate-left' },
             { id: 'view-settings', label: 'ตั้งค่าพิกัดคลังสินค้า', icon: 'fa-gears' }
         ];
 
@@ -2156,6 +2539,7 @@ date_default_timezone_set('Asia/Bangkok');
                 playSuccessSound();
                 showToast(`✅ อัปโหลดเข้าฐานข้อมูลสำเร็จแล้ว ${successCount} รายการ (${uploadedSns.slice(0, 3).join(', ')}${uploadedSns.length > 3 ? '...' : ''}) มั่นใจได้ ข้อมูลไม่สูญหาย!`);
                 renderLiveInboundFeed();
+                await logUserActivity('INBOUND', `ซิงค์อัปโหลดรายการรับเข้าออฟไลน์เข้า DB จำนวน ${successCount} รายการ`);
             }
 
             await loadDataFromDatabase();
@@ -2189,6 +2573,7 @@ date_default_timezone_set('Asia/Bangkok');
         }
 
         document.addEventListener('DOMContentLoaded', async () => {
+            initThemeSystem();
             await initAuthSystem();
             initOfflineDatabase();
             renderSidebarMenu();
@@ -2227,7 +2612,7 @@ date_default_timezone_set('Asia/Bangkok');
         }
 
         function switchView(viewId) {
-            if (viewId === 'view-settings') {
+            if (viewId === 'view-settings' || viewId === 'view-activities') {
                 if (!currentUser || currentUser.role !== 'admin') {
                     playErrorSound();
                     alert("⛔ ปฏิเสธการเข้าถึง: หน้านี้สงวนสิทธิ์ไว้สำหรับผู้ดูแลระบบ (Admin) เท่านั้น!");
@@ -2245,7 +2630,7 @@ date_default_timezone_set('Asia/Bangkok');
             executeSwitchView(viewId);
         }
 
-        function executeSwitchView(viewId) {
+        async function executeSwitchView(viewId) {
             document.querySelectorAll('.menu-item button').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
 
@@ -2257,12 +2642,15 @@ date_default_timezone_set('Asia/Bangkok');
             const itemConfig = menuConfig.find(m => m.id === viewId);
             if(itemConfig) {
                 document.getElementById('navTitleText').innerHTML = `<i class="fa-solid ${escapeHTML(itemConfig.icon)}" style="color:var(--primary);"></i> ${escapeHTML(itemConfig.label)}`;
+                await logUserActivity('NAVIGATION', `กดเข้าดูหน้าเมนู: ${itemConfig.label}`);
             }
 
             if(viewId === 'view-locations') {
                 renderDrillDownAisleBar();
                 renderDrillDownBaysGrid();
                 renderDrillDownSlotsGrid();
+            } else if(viewId === 'view-activities') {
+                loadUserActivityLogsFromDB();
             } else if(viewId === 'view-settings') {
                 renderAisleSettingsTable();
                 renderUserManagementTable();
@@ -2278,6 +2666,101 @@ date_default_timezone_set('Asia/Bangkok');
             
             toast.classList.add('show');
             setTimeout(() => toast.classList.remove('show'), 3500);
+        }
+
+        // --- FETCH & RENDER USER ACTIVITY LOGS ---
+        async function loadUserActivityLogsFromDB() {
+            try {
+                const { data, error } = await _supabase
+                    .from('user_activities')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+                    .limit(500);
+
+                if (error) {
+                    console.warn('ดึงข้อมูล user_activities ล้มเหลว:', error.message);
+                    return;
+                }
+
+                globalActivityLogs = data || [];
+                filterActivityLogs();
+            } catch(e) {
+                console.error('Fetch Activity Logs Error:', e);
+            }
+        }
+
+        function populateLogUserDropdown() {
+            const select = document.getElementById('logUserSelect');
+            if(!select) return;
+            select.innerHTML = '<option value="ALL">👤 ผู้ใช้ทุกคน (All Users)</option>';
+
+            const userMap = new Set();
+            systemUsers.forEach(u => userMap.add(u.username));
+
+            Array.from(userMap).sort().forEach(uname => {
+                select.add(new Option(`👤 ${uname}`, uname));
+            });
+        }
+
+        function filterActivityLogs() {
+            const q = document.getElementById('logSearchInput').value.toLowerCase().trim();
+            const selectedUser = document.getElementById('logUserSelect').value;
+            const selectedType = document.getElementById('logTypeSelect').value;
+
+            const filtered = globalActivityLogs.filter(log => {
+                const matchesQ = (
+                    (log.username && log.username.toLowerCase().includes(q)) ||
+                    (log.full_name && log.full_name.toLowerCase().includes(q)) ||
+                    (log.description && log.description.toLowerCase().includes(q)) ||
+                    (log.target_sn && log.target_sn.toLowerCase().includes(q))
+                );
+
+                const matchesUser = (selectedUser === 'ALL' || log.username === selectedUser);
+                const matchesType = (selectedType === 'ALL' || log.action_type === selectedType);
+
+                return matchesQ && matchesUser && matchesType;
+            });
+
+            renderActivityLogsTable(filtered);
+        }
+
+        function renderActivityLogsTable(logs) {
+            const tbody = document.getElementById('activityLogsTableBody');
+            document.getElementById('logTotalBadge').textContent = `${logs.length.toLocaleString()} ประวัติ`;
+
+            tbody.innerHTML = '';
+
+            if (logs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">ไม่พบประวัติการใช้งานตามเงื่อนไขที่เลือก</td></tr>`;
+                return;
+            }
+
+            logs.forEach((log, idx) => {
+                let badgeClass = 'nav';
+                let typeText = 'เข้าดูหน้าเว็บ';
+
+                if (log.action_type === 'INBOUND') { badgeClass = 'inbound'; typeText = 'รับเข้าสินค้า'; }
+                else if (log.action_type === 'OUTBOUND') { badgeClass = 'outbound'; typeText = 'ตัดจ่ายสินค้า'; }
+                else if (log.action_type === 'DELETE') { badgeClass = 'delete'; typeText = 'ลบข้อมูล'; }
+                else if (log.action_type === 'RELOCATE') { badgeClass = 'relocate'; typeText = 'ย้ายพิกัด'; }
+                else if (log.action_type === 'AUTH') { badgeClass = 'auth'; typeText = 'เข้าสู่ระบบ/สิทธิ์'; }
+
+                const dateStr = log.created_at ? new Date(log.created_at).toLocaleString('th-TH') : '-';
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="text-align:center; font-weight:700;" class="mono">${idx + 1}</td>
+                    <td style="font-size:0.78rem; color:var(--text-muted);">${escapeHTML(dateStr)}</td>
+                    <td>
+                        <strong class="mono" style="color:var(--primary-text); font-size:0.88rem;">${escapeHTML(log.username)}</strong>
+                        <div style="font-size:0.75rem; color:var(--text-sub);">${escapeHTML(log.full_name || '-')}</div>
+                    </td>
+                    <td><span class="badge-action ${badgeClass}">${typeText}</span></td>
+                    <td style="font-size:0.85rem; font-weight:500;">${escapeHTML(log.description || '-')}</td>
+                    <td><code class="mono font-bold" style="color:var(--primary-text);">${escapeHTML(log.target_sn || '-')}</code></td>
+                `;
+                tbody.appendChild(tr);
+            });
         }
 
         // --- LOAD & REALTIME SYNC WAREHOUSE CONFIGS FROM DB ---
@@ -2394,6 +2877,7 @@ date_default_timezone_set('Asia/Bangkok');
 
                 if (isAllSuccess) {
                     showToast("✅ บันทึกพิกัดแถวทั้งหมดเข้า DB เรียบร้อยแล้ว (ซิงค์เรียลไทม์ทุกเครื่อง 100%)");
+                    await logUserActivity('AUTH', `บันทึกและอัปเดตโครงสร้างพิกัดคลังสินค้าทั้งหมดลง DB`);
                 } else {
                     showToast("⚠️ บันทึกข้อมูลบางส่วนไม่สำเร็จ กรุณาตรวจสอบสิทธิ์ DB/RLS", true);
                 }
@@ -2658,6 +3142,18 @@ date_default_timezone_set('Asia/Bangkok');
                     await loadUsersFromDB();
                 })
                 .subscribe();
+
+            _supabase
+                .channel('public:user_activities')
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'user_activities' }, () => {
+                    if (document.getElementById('view-activities').classList.contains('active')) {
+                        loadUserActivityLogsFromDB();
+                    }
+                    if (document.getElementById('userHistoryAuditModal').style.display === 'flex') {
+                        refreshSingleUserLogs();
+                    }
+                })
+                .subscribe();
         }
 
         function refreshLocationVisualizerIfActive() {
@@ -2694,7 +3190,7 @@ date_default_timezone_set('Asia/Bangkok');
                 tr.innerHTML = `
                     <td style="text-align:center;"><input type="checkbox" class="item-checkbox" data-sn="${escapeHTML(item.sn)}" ${isChecked ? 'checked' : ''} onchange="toggleItemSelection('${escapeHTML(item.sn)}', this.checked)"></td>
                     <td style="text-align:center; font-weight:700;" class="mono">${index + 1}</td>
-                    <td><code class="mono" style="color:var(--primary); font-weight:700;">${escapeHTML(item.category || 'N/A')}</code></td>
+                    <td><code class="mono" style="color:var(--primary-text); font-weight:700;">${escapeHTML(item.category || 'N/A')}</code></td>
                     <td style="font-weight:600;">${escapeHTML(item.name || '-')}</td>
                     <td><code class="mono" style="font-weight:700;">${escapeHTML(item.sn)}</code></td>
                     <td><span class="badge-location mono"><i class="fa-solid fa-location-dot"></i> ${escapeHTML(formatLoc)}</span></td>
@@ -2863,12 +3359,15 @@ date_default_timezone_set('Asia/Bangkok');
                 globalInventoryData = globalInventoryData.filter(i => i.sn !== sn);
                 rebuildOccupiedSet();
                 playSuccessSound();
+                speakThaiText(`ลบซีเรียล ${sn} เรียบร้อยค่ะ`);
                 showToast(`🗑️ ลบ S/N: ${sn} เรียบร้อยแล้ว`);
 
                 filterInventoryData();
                 updateKPIs();
                 refreshLocationVisualizerIfActive();
                 closeDeleteConfirmModal();
+
+                await logUserActivity('DELETE', `ลบรายการสินค้า S/N ออกจากสต็อก`, sn);
 
                 if (navigator.onLine && id) {
                     await _supabase.from('warehouse_items').delete().eq('id', id);
@@ -2887,7 +3386,10 @@ date_default_timezone_set('Asia/Bangkok');
                 closeDeleteConfirmModal();
 
                 playSuccessSound();
+                speakThaiText(`ลบสินค้าเรียบร้อยแล้ว จำนวน ${confirmCount} รายการค่ะ`);
                 showToast(`🗑️ ลบข้อมูล ${confirmCount} รายการเรียบร้อยแล้ว`);
+
+                await logUserActivity('DELETE', `ลบรายการสินค้าแบบ Batch จำนวน ${confirmCount} รายการ (${targetSns.slice(0, 3).join(', ')}...)`);
 
                 if (navigator.onLine) {
                     await _supabase.from('warehouse_items').delete().in('sn', targetSns);
@@ -2947,7 +3449,7 @@ date_default_timezone_set('Asia/Bangkok');
                 if(count >= 8) break;
                 html += `
                     <div class="suggestion-item" onclick="selectSuggestedSku('${escapeHTML(code)}', '${escapeHTML(name)}')">
-                        <div><span class="mono" style="color:var(--primary); font-weight:700;">[${escapeHTML(code)}]</span> ${escapeHTML(name)}</div>
+                        <div><span class="mono" style="color:var(--primary-text); font-weight:700;">[${escapeHTML(code)}]</span> ${escapeHTML(name)}</div>
                         <i class="fa-solid fa-arrow-turn-down" style="font-size:0.75rem; color:var(--text-muted);"></i>
                     </div>
                 `;
@@ -3005,6 +3507,7 @@ date_default_timezone_set('Asia/Bangkok');
 
             if(globalInventoryData.some(i => i.sn.toLowerCase() === sn.toLowerCase())) {
                 playErrorSound();
+                speakThaiText(`ซีเรียล ${sn} มีอยู่ในคลังแล้วค่ะ`);
                 showToast(`🚨 S/N "${sn}" มีอยู่ในระบบสต็อกแล้ว!`, true);
                 snInput.select();
                 return;
@@ -3035,10 +3538,13 @@ date_default_timezone_set('Asia/Bangkok');
             refreshLocationVisualizerIfActive();
             autoSelectAvailableSlot();
 
+            await logUserActivity('INBOUND', `รับเข้าสินค้า [SKU: ${category}] ${name} เข้าพิกัด ${location}`, sn);
+
             if (!navigator.onLine) {
                 try {
                     await saveItemOffline(payload);
                     playSuccessSound();
+                    speakThaiText(`บันทึกออฟไลน์ ซีเรียล ${sn} เรียบร้อยค่ะ`);
                     showToast(`📦 ออฟไลน์: บันทึก S/N: ${sn} ลงในเครื่องแล้ว`);
                     
                     recentInboundList.unshift({
@@ -3066,6 +3572,7 @@ date_default_timezone_set('Asia/Bangkok');
                         refreshLocationVisualizerIfActive();
                     } else {
                         playSuccessSound();
+                        speakThaiText(`รับสินค้าเข้าพิกัด ${location} เรียบร้อยค่ะ`);
                         showToast(`✅ บันทึกรับสินค้า S/N: ${sn} สำเร็จ`);
                         
                         recentInboundList.unshift({
@@ -3120,6 +3627,7 @@ date_default_timezone_set('Asia/Bangkok');
 
             if (!item) {
                 playErrorSound();
+                speakThaiText(`ไม่พบซีเรียล ${sn} ในระบบค่ะ`);
                 showToast(`❌ ไม่พบ S/N: "${sn}" ในคลังสินค้า`, true);
                 snInput.select();
                 return;
@@ -3134,6 +3642,7 @@ date_default_timezone_set('Asia/Bangkok');
 
             outboundCartItems.push(item);
             playSuccessSound();
+            speakThaiText(`เพิ่มซีเรียล ${sn} ลงตะกร้าจ่ายสินค้าแล้วค่ะ`);
             showToast(`🛒 เพิ่ม S/N: ${sn} เข้าใบสั่งจ่ายเรียบร้อย`);
 
             snInput.value = '';
@@ -3216,7 +3725,10 @@ date_default_timezone_set('Asia/Bangkok');
             renderOutboundCartTable();
 
             playSuccessSound();
+            speakThaiText(`ตัดจ่ายสินค้าเรียบร้อย ออกใบงานจ่ายสินค้าเลขที่ ${orderNo} ค่ะ`);
             showToast(`🎉 ออกใบสั่งจ่ายเลขที่ ${orderNo} และตัดจ่าย ${removedSns.length} รายการสำเร็จ!`);
+
+            await logUserActivity('OUTBOUND', `ตัดจ่ายสินค้าเลขที่ ${orderNo} จำนวน ${removedSns.length} รายการ ไปยัง "${dest}"`);
 
             if (navigator.onLine) {
                 await _supabase.from('warehouse_items').delete().in('id', removedIds);
@@ -3453,7 +3965,7 @@ date_default_timezone_set('Asia/Bangkok');
             let rowsHtml = items.map(item => `
                 <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-subtle); padding:6px 10px; border-radius:6px; margin-bottom:6px; border:1px solid var(--border-color);">
                     <div style="display:flex; gap:10px; align-items:center; overflow:hidden;">
-                        <span class="mono" style="font-weight:700; color:var(--primary); font-size:0.85rem;">${escapeHTML(item.sn)}</span>
+                        <span class="mono" style="font-weight:700; color:var(--primary-text); font-size:0.85rem;">${escapeHTML(item.sn)}</span>
                         <span style="font-size:0.8rem; color:var(--text-sub); font-weight:600; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">[${escapeHTML(item.category)}] ${escapeHTML(item.name || '')}</span>
                     </div>
                     <div style="display:flex; gap:4px; flex-shrink:0;">
@@ -3467,7 +3979,7 @@ date_default_timezone_set('Asia/Bangkok');
             card.innerHTML = `
                 <div class="slot-card-header">
                     <strong class="mono" style="font-size:0.92rem; color:var(--text-main);">📍 ${escapeHTML(formatLocationCode(slotTitle))}</strong>
-                    <span class="mono" style="font-size:0.78rem; font-weight:700; color:var(--success); background:rgba(0,0,0,0.04); padding:2px 8px; border-radius:4px;">
+                    <span class="mono" style="font-size:0.78rem; font-weight:700; color:var(--success); background:var(--bg-subtle); padding:2px 8px; border-radius:4px;">
                         ${items.length} เครื่อง
                     </span>
                 </div>
@@ -3882,18 +4394,23 @@ date_default_timezone_set('Asia/Bangkok');
             const newLoc = document.getElementById('relocatePreviewBadge').textContent;
 
             const itemIdx = globalInventoryData.findIndex(i => String(i.id) === String(id) || i.sn === sn);
+            const oldLoc = itemIdx !== -1 ? globalInventoryData[itemIdx].location : '-';
+
             if (itemIdx !== -1) {
                 globalInventoryData[itemIdx].location = newLoc;
             }
 
             rebuildOccupiedSet();
             playSuccessSound();
+            speakThaiText(`ย้ายตำแหน่งซีเรียล ${sn} เรียบร้อยแล้วค่ะ`);
             showToast(`✅ ย้ายพิกัดจัดเก็บใหม่เป็น ${newLoc} สำเร็จ`);
             closeRelocateModal();
             
             filterInventoryData();
             updateKPIs();
             refreshLocationVisualizerIfActive();
+
+            await logUserActivity('RELOCATE', `ย้ายพิกัดสินค้าจาก ${oldLoc} ไปยัง ${newLoc}`, sn);
 
             if (navigator.onLine) {
                 await _supabase
@@ -4008,7 +4525,10 @@ date_default_timezone_set('Asia/Bangkok');
             updateKPIs();
             refreshLocationVisualizerIfActive();
             playSuccessSound();
+            speakThaiText(`ย้ายสินค้าเข้าแถว ${targetAisle} เรียบร้อยแล้วค่ะ`);
             showToast(`✅ ย้ายสินค้า ${updatesList.length} รายการเข้าแถว ${targetAisle} เรียบร้อยแล้ว!`);
+
+            await logUserActivity('RELOCATE', `ย้ายพิกัดสินค้าแบบ Batch จำนวน ${updatesList.length} รายการ ไปยังแถว ${targetAisle}`);
 
             if (navigator.onLine) {
                 for (const u of updatesList) {
@@ -4052,7 +4572,7 @@ date_default_timezone_set('Asia/Bangkok');
                         <input type="number" class="form-control mono" style="width:85px; text-align:center; font-weight:700; display:inline-block;" value="${cfg.slots}" min="1" onchange="updateAisleConfigRealtime('${escapeHTML(aisle)}', 'slots', this.value)">
                     </td>
                     <td style="text-align:center;">
-                        <span class="mono font-bold" style="color:var(--primary); font-size:0.9rem;">${count.toLocaleString()} เครื่อง</span>
+                        <span class="mono font-bold" style="color:var(--primary-text); font-size:0.9rem;">${count.toLocaleString()} เครื่อง</span>
                     </td>
                     <td style="text-align:center;">
                         <div style="display:inline-flex; gap:4px;">
@@ -4186,7 +4706,7 @@ date_default_timezone_set('Asia/Bangkok');
             document.getElementById('exportAisleGroup').style.display = (val === 'AISLE') ? 'block' : 'none';
         }
 
-        function executeExcelExport() {
+        async function executeExcelExport() {
             const scope = document.getElementById('exportScopeSelect').value;
             let exportData = [];
 
@@ -4247,6 +4767,8 @@ date_default_timezone_set('Asia/Bangkok');
             XLSX.utils.book_append_sheet(wb, ws, "Stock Inventory");
             XLSX.writeFile(wb, `wms_inventory_export_${Date.now()}.xlsx`);
 
+            await logUserActivity('AUTH', `ส่งออกไฟล์ Excel ข้อมูลสินค้าจำนวน ${exportData.length} รายการ`);
+
             closeExcelExportModal();
             showToast(`📥 ส่งออกไฟล์ Excel สำเร็จ (${exportData.length} รายการ)`);
         }
@@ -4281,6 +4803,7 @@ date_default_timezone_set('Asia/Bangkok');
                     if(newItems.length > 0) {
                         showToast(`⏳ กำลังนำเข้าข้อมูล ${newItems.length} รายการ...`);
                         await _supabase.from('warehouse_items').insert(newItems);
+                        await logUserActivity('INBOUND', `นำเข้าข้อมูลสินค้าผ่านไฟล์จำนวน ${newItems.length} รายการ`);
                         playSuccessSound();
                         showToast(`✅ นำเข้าไฟล์ฐานข้อมูลเรียบร้อยแล้ว (${newItems.length} รายการ)`);
                         loadDataFromDatabase();

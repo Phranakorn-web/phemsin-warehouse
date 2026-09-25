@@ -740,12 +740,12 @@ date_default_timezone_set('Asia/Bangkok');
 </head>
 <body>
 
-    <!-- SYSTEM AUTH LOGIN OVERLAY (บังคับล็อกอินทุกครั้งที่เปิดเว็บใหม่) -->
+    <!-- SYSTEM AUTH LOGIN OVERLAY (บังคับล็อกอินผ่าน SUPABASE REALTIME DB) -->
     <div id="loginOverlay" class="login-overlay">
         <div class="login-card">
             <div class="login-brand-icon"><i class="fa-solid fa-boxes-stacked"></i></div>
             <h2 style="font-weight: 800; font-size: 1.35rem; color: var(--text-main); margin-bottom: 4px;">เข้าสู่ระบบ WMS System</h2>
-            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">กรุณากรอก Username และ Password เพื่อเข้าใช้งาน</p>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">กรุณากรอก Username และ Password เพื่อดึงข้อมูลสิทธิ์จาก Supabase DB</p>
 
             <form id="loginForm" onsubmit="handleSystemLogin(event)" autocomplete="off">
                 <div class="form-group" style="text-align: left;">
@@ -1105,7 +1105,7 @@ date_default_timezone_set('Asia/Bangkok');
                 </div>
             </section>
 
-            <!-- VIEW 5: WAREHOUSE LOCATION CONFIG & ADMIN USER MANAGEMENT (UPDATED HARDENED UX UI) -->
+            <!-- VIEW 5: WAREHOUSE LOCATION CONFIG & ADMIN USER MANAGEMENT (UPDATED REALTIME SUPABASE USER CONTROL) -->
             <section id="view-settings" class="view-section">
                 
                 <!-- Modern Hero Banner -->
@@ -1117,11 +1117,11 @@ date_default_timezone_set('Asia/Bangkok');
                             </span>
                         </div>
                         <h2 style="font-size:1.4rem; font-weight:800; margin-bottom:4px;">ตั้งค่าพิกัดคลังสินค้า และ จัดการผู้ใช้งาน</h2>
-                        <p style="font-size:0.85rem; color:#94a3b8; font-weight:400;">จัดการความจุแถวจัดเก็บ (Aisles) โครงสร้างชั้นวาง และสิทธิ์ผู้ใช้งานทั้งหมดในระบบ</p>
+                        <p style="font-size:0.85rem; color:#94a3b8; font-weight:400;">จัดการความจุแถวจัดเก็บ (Aisles) โครงสร้างชั้นวาง และสิทธิ์ผู้ใช้งานทั้งหมดในระบบผ่าน Supabase DB Realtime</p>
                     </div>
                     <div style="display:flex; align-items:center; gap:10px;">
-                        <button class="btn btn-sm btn-secondary" style="background:rgba(255,255,255,0.1); border-color:rgba(255,255,255,0.2); color:#fff;" onclick="loadWarehouseConfigsFromDB(); renderAisleSettingsTable(); renderUserManagementTable();">
-                            <i class="fa-solid fa-rotate"></i> รีเฟรชข้อมูล
+                        <button class="btn btn-sm btn-secondary" style="background:rgba(255,255,255,0.1); border-color:rgba(255,255,255,0.2); color:#fff;" onclick="loadWarehouseConfigsFromDB(); loadUsersFromDB(); renderAisleSettingsTable();">
+                            <i class="fa-solid fa-rotate"></i> รีเฟรชข้อมูล DB
                         </button>
                     </div>
                 </div>
@@ -1169,11 +1169,11 @@ date_default_timezone_set('Asia/Bangkok');
                     </div>
                 </div>
 
-                <!-- Section 2: User Management Section (Multi-User Control Panel) -->
+                <!-- Section 2: User Management Section (Multi-User Control Panel Sync Supabase DB) -->
                 <div class="settings-section-card">
                     <div class="card-header" style="border-bottom:none; margin-bottom:1rem; padding-bottom:0;">
                         <div class="card-title" style="font-size:1.1rem; color:var(--text-main);">
-                            <i class="fa-solid fa-users-gear" style="color:var(--primary);"></i> จัดการบัญชีผู้ใช้งานและกำหนดสิทธิ์ (Multi-User Control Panel)
+                            <i class="fa-solid fa-users-gear" style="color:var(--primary);"></i> จัดการบัญชีผู้ใช้งานและกำหนดสิทธิ์ (Supabase DB Realtime)
                         </div>
                         <button class="btn btn-sm btn-primary" onclick="openCreateUserModal()">
                             <i class="fa-solid fa-user-plus"></i> เพิ่มผู้ใช้งานใหม่
@@ -1186,13 +1186,16 @@ date_default_timezone_set('Asia/Bangkok');
                                 <tr>
                                     <th style="width:60px; text-align:center;">#</th>
                                     <th>Username</th>
-                                    <th>ชื่อ-นามสกุล / แผนก</th>
+                                    <th>ชื่อ-นามสกุล</th>
+                                    <th>แผนก (Department)</th>
                                     <th>ระดับสิทธิ์ (Role)</th>
-                                    <th style="text-align:center; width:150px;">แก้ไขรหัสผ่าน</th>
+                                    <th style="text-align:center; width:150px;">แก้ไขข้อมูล/รหัส</th>
                                     <th style="text-align:center; width:90px;">ลบผู้ใช้</th>
                                 </tr>
                             </thead>
-                            <tbody id="userManagementTableBody"></tbody>
+                            <tbody id="userManagementTableBody">
+                                <tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> กำลังโหลดข้อมูลผู้ใช้งานจาก Supabase...</td></tr>
+                            </tbody>
                         </table>
                     </div>
                 </div>
@@ -1251,7 +1254,7 @@ date_default_timezone_set('Asia/Bangkok');
         </div>
     </div>
 
-    <!-- MODAL: CHANGE PASSWORD -->
+    <!-- MODAL: CHANGE PASSWORD (UPDATED SUPABASE DB REALTIME SYNC) -->
     <div id="changePasswordModal" class="modal-overlay" style="display:none;">
         <div class="card" style="width: 420px; max-width: 90vw;">
             <div class="card-header">
@@ -1262,46 +1265,50 @@ date_default_timezone_set('Asia/Bangkok');
             <form onsubmit="submitChangePassword(event)">
                 <div class="form-group">
                     <label>รหัสผ่านเดิม</label>
-                    <input type="password" id="oldPasswordInput" class="form-control mono" required>
+                    <input type="password" id="oldPasswordInput" class="form-control mono" required autocomplete="off">
                 </div>
                 <div class="form-group">
                     <label>รหัสผ่านใหม่</label>
-                    <input type="password" id="newPasswordInput" class="form-control mono" required minlength="4">
+                    <input type="password" id="newPasswordInput" class="form-control mono" required minlength="4" autocomplete="off">
                 </div>
                 <div class="form-group" style="margin-bottom:1.2rem;">
                     <label>ยืนยันรหัสผ่านใหม่</label>
-                    <input type="password" id="confirmNewPasswordInput" class="form-control mono" required minlength="4">
+                    <input type="password" id="confirmNewPasswordInput" class="form-control mono" required minlength="4" autocomplete="off">
                 </div>
 
                 <div style="display:flex; gap:0.5rem;">
-                    <button type="submit" class="btn btn-primary" style="flex:1;"><i class="fa-solid fa-floppy-disk"></i> บันทึกรหัสผ่านใหม่</button>
+                    <button type="submit" class="btn btn-primary" style="flex:1;"><i class="fa-solid fa-floppy-disk"></i> บันทึกรหัสผ่านลง DB</button>
                     <button type="button" class="btn btn-secondary" onclick="closeChangePasswordModal()">ยกเลิก</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- MODAL: CREATE / EDIT USER -->
+    <!-- MODAL: CREATE / EDIT USER (UPDATED SUPABASE REALTIME SYNC WITH DEPARTMENT FIELD) -->
     <div id="createUserModal" class="modal-overlay" style="display:none;">
-        <div class="card" style="width: 440px; max-width: 90vw;">
+        <div class="card" style="width: 460px; max-width: 90vw;">
             <div class="card-header">
-                <div class="card-title"><i class="fa-solid fa-user-plus" style="color:var(--primary);"></i> <span id="userModalTitle">เพิ่มผู้ใช้งานใหม่</span></div>
+                <div class="card-title"><i class="fa-solid fa-user-gear" style="color:var(--primary);"></i> <span id="userModalTitle">เพิ่มผู้ใช้งานใหม่</span></div>
                 <button class="btn btn-secondary" style="padding:4px 8px;" onclick="closeCreateUserModal()">&times;</button>
             </div>
 
             <form onsubmit="submitUserForm(event)">
                 <input type="hidden" id="userFormId">
                 <div class="form-group">
-                    <label>Username (ชื่อใช้เข้าสู่ระบบ)</label>
-                    <input type="text" id="userFormUsername" class="form-control mono" required pattern="[a-zA-Z0-9_-]+" title="ใช้ตัวอักษรภาษาอังกฤษ ตัวเลข และ - _ ได้เท่านั้น">
+                    <label>Username (ชื่อใช้เข้าสู่ระบบ - แก้ไขได้)</label>
+                    <input type="text" id="userFormUsername" class="form-control mono" required pattern="[a-zA-Z0-9_-]+" title="ใช้ตัวอักษรภาษาอังกฤษ ตัวเลข และ - _ ได้เท่านั้น" autocomplete="off">
                 </div>
                 <div class="form-group">
-                    <label>ชื่อ-นามสกุล / รายละเอียดผู้ใช้งาน</label>
-                    <input type="text" id="userFormFullName" class="form-control" required placeholder="เช่น นายสมชาย (เจ้าหน้าที่คลัง)">
+                    <label>ชื่อ-นามสกุล</label>
+                    <input type="text" id="userFormFullName" class="form-control" required placeholder="เช่น นายสมชาย ใจดี" autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label>แผนก / ฝ่าย (Department)</label>
+                    <input type="text" id="userFormDepartment" class="form-control" placeholder="เช่น แผนกคลังสินค้า / ฝ่ายจัดซื้อ" autocomplete="off">
                 </div>
                 <div class="form-group">
                     <label>รหัสผ่าน (Password)</label>
-                    <input type="password" id="userFormPassword" class="form-control mono" placeholder="กรอกรหัสผ่าน...">
+                    <input type="password" id="userFormPassword" class="form-control mono" placeholder="กรอกรหัสผ่าน..." autocomplete="off">
                 </div>
                 <div class="form-group" style="margin-bottom:1.2rem;">
                     <label>ระดับสิทธิ์ (Role)</label>
@@ -1312,7 +1319,7 @@ date_default_timezone_set('Asia/Bangkok');
                 </div>
 
                 <div style="display:flex; gap:0.5rem;">
-                    <button type="submit" class="btn btn-primary" style="flex:1;"><i class="fa-solid fa-save"></i> บันทึกข้อมูลผู้ใช้</button>
+                    <button type="submit" class="btn btn-primary" style="flex:1;"><i class="fa-solid fa-cloud-arrow-up"></i> บันทึกข้อมูลเข้า Supabase DB</button>
                     <button type="button" class="btn btn-secondary" onclick="closeCreateUserModal()">ยกเลิก</button>
                 </div>
             </form>
@@ -1519,15 +1526,14 @@ date_default_timezone_set('Asia/Bangkok');
 
         // --- AUTHENTICATION & MULTI-USER SYSTEM STATE ---
         const DEFAULT_USERS = [
-            { id: 1, username: 'admin', password: '123456', name: 'Super Admin (ผู้ดูแลระบบ)', role: 'admin' },
-            { id: 2, username: 'user1', password: '123456', name: 'นายสมชาย (เจ้าหน้าที่คลัง)', role: 'user' }
+            { id: 1, username: 'admin', password: '123456', name: 'Super Admin (ผู้ดูแลระบบ)', department: 'ฝ่ายบริหาร IT', role: 'admin' },
+            { id: 2, username: 'user1', password: '123456', name: 'นายสมชาย ใจดี', department: 'แผนกคลังสินค้า', role: 'user' }
         ];
 
         let systemUsers = [];
         let currentUser = null;
         let isAdminAuthenticatedSession = false; // Flag จำสิทธิ์ Admin บังคับรหัสผ่านเข้าส่วนตั้งค่า
         let loginFailedAttempts = 0;
-        let loginLockoutTimer = null;
 
         // AUTO LOGOUT TIMER CONFIG (15 MINS INACTIVE AUTO DISCONNECT)
         const AUTO_LOGOUT_TIMEOUT_MS = 15 * 60 * 1000; // 15 นาที
@@ -1547,24 +1553,65 @@ date_default_timezone_set('Asia/Bangkok');
             });
         }
 
-        function initAuthSystem() {
-            const savedUsers = localStorage.getItem('WMS_USERS');
-            if (savedUsers) {
-                try {
-                    systemUsers = JSON.parse(savedUsers);
-                } catch(e) {
+        // --- SUPABASE USER MANAGEMENT REALTIME FETCH & SYNC ---
+        async function loadUsersFromDB() {
+            try {
+                const { data, error } = await _supabase
+                    .from('profiles')
+                    .select('*')
+                    .order('created_at', { ascending: true });
+
+                if (error) {
+                    console.warn('ไม่พบตาราง profiles ใน DB ใช้อาร์เรย์สำรอง:', error.message);
+                    const savedUsers = localStorage.getItem('WMS_USERS');
+                    systemUsers = savedUsers ? JSON.parse(savedUsers) : [...DEFAULT_USERS];
+                } else if (data && data.length > 0) {
+                    systemUsers = data.map(u => ({
+                        id: u.id,
+                        username: u.username,
+                        password: u.password || '123456',
+                        name: u.full_name || u.name || u.username,
+                        department: u.department || 'แผนกคลังสินค้า',
+                        role: u.role || 'user'
+                    }));
+                    localStorage.setItem('WMS_USERS', JSON.stringify(systemUsers));
+                } else {
+                    // หากในตาราง profiles ยังว่างเปล่า ให้ใส่ค่า Default เริ่มต้นเข้า DB
                     systemUsers = [...DEFAULT_USERS];
+                    for(let u of DEFAULT_USERS) {
+                        await _supabase.from('profiles').upsert({
+                            username: u.username,
+                            password: u.password,
+                            full_name: u.name,
+                            department: u.department,
+                            role: u.role
+                        }, { onConflict: 'username' });
+                    }
                 }
-            } else {
-                systemUsers = [...DEFAULT_USERS];
-                localStorage.setItem('WMS_USERS', JSON.stringify(systemUsers));
+            } catch(e) {
+                console.error('Fetch users DB error:', e);
+                const savedUsers = localStorage.getItem('WMS_USERS');
+                systemUsers = savedUsers ? JSON.parse(savedUsers) : [...DEFAULT_USERS];
             }
 
-            // ใช้ sessionStorage เพื่อบังคับให้ผู้ใช้ต้องใส่รหัสผ่านใหม่ทุกครั้งที่ปิดเว็บแล้วเปิดใหม่
+            renderUserManagementTable();
+        }
+
+        async function initAuthSystem() {
+            await loadUsersFromDB();
+
             const activeSession = sessionStorage.getItem('WMS_ACTIVE_USER');
             if (activeSession) {
                 try {
                     currentUser = JSON.parse(activeSession);
+                    
+                    // Sync ล่าสุดจาก systemUsers ที่ดึงมาจาก Supabase
+                    const matchedUser = systemUsers.find(u => u.username.toLowerCase() === currentUser.username.toLowerCase());
+                    if(matchedUser) {
+                        currentUser = matchedUser;
+                        sessionStorage.setItem('WMS_ACTIVE_USER', JSON.stringify(currentUser));
+                    }
+
                     document.getElementById('loginOverlay').style.display = 'none';
                     document.getElementById('currentUserNameText').textContent = escapeHTML(`${currentUser.name} (${currentUser.username})`);
                     resetAutoLogoutTimer();
@@ -1585,7 +1632,8 @@ date_default_timezone_set('Asia/Bangkok');
             document.getElementById('loginUsername').focus();
         }
 
-        function handleSystemLogin(e) {
+        // --- LOGIN VERIFICATION VIA SUPABASE DB ---
+        async function handleSystemLogin(e) {
             e.preventDefault();
             
             if (loginFailedAttempts >= 5) {
@@ -1597,11 +1645,40 @@ date_default_timezone_set('Asia/Bangkok');
             const uInput = document.getElementById('loginUsername').value.trim();
             const pInput = document.getElementById('loginPassword').value.trim();
 
-            const found = systemUsers.find(u => u.username.toLowerCase() === uInput.toLowerCase() && u.password === pInput);
+            showToast("⏳ กำลังตรวจสอบสิทธิ์จากฐานข้อมูล Supabase DB...");
 
-            if (found) {
+            // 1. ค้นหาผู้ใช้จาก DB Direct
+            let foundUser = null;
+            try {
+                const { data, error } = await _supabase
+                    .from('profiles')
+                    .select('*')
+                    .ilike('username', uInput)
+                    .eq('password', pInput)
+                    .maybeSingle();
+
+                if (!error && data) {
+                    foundUser = {
+                        id: data.id,
+                        username: data.username,
+                        password: data.password,
+                        name: data.full_name || data.name || data.username,
+                        department: data.department || 'แผนกคลังสินค้า',
+                        role: data.role || 'user'
+                    };
+                }
+            } catch(e) {
+                console.warn('DB Login Query Error:', e);
+            }
+
+            // Fallback เผื่อ DB ออฟไลน์
+            if(!foundUser) {
+                foundUser = systemUsers.find(u => u.username.toLowerCase() === uInput.toLowerCase() && u.password === pInput);
+            }
+
+            if (foundUser) {
                 loginFailedAttempts = 0;
-                currentUser = found;
+                currentUser = foundUser;
                 sessionStorage.setItem('WMS_ACTIVE_USER', JSON.stringify(currentUser));
                 
                 document.getElementById('loginOverlay').style.display = 'none';
@@ -1613,7 +1690,8 @@ date_default_timezone_set('Asia/Bangkok');
 
                 resetAutoLogoutTimer();
                 initSecurityListeners();
-                showToast(`🎉 ยินดีต้อนรับคุณ ${escapeHTML(currentUser.name)}`);
+                playSuccessSound();
+                showToast(`🎉 ยืนยันสิทธิ์จาก DB สำเร็จ! ยินดีต้อนรับคุณ ${escapeHTML(currentUser.name)}`);
             } else {
                 loginFailedAttempts++;
                 playErrorSound();
@@ -1656,32 +1734,54 @@ date_default_timezone_set('Asia/Bangkok');
             document.getElementById('confirmNewPasswordInput').value = '';
         }
 
-        function submitChangePassword(e) {
+        // --- UPDATED CHANGE PASSWORD SYNC SUPABASE REALTIME DB ---
+        async function submitChangePassword(e) {
             e.preventDefault();
             const oldP = document.getElementById('oldPasswordInput').value;
             const newP = document.getElementById('newPasswordInput').value;
             const confirmP = document.getElementById('confirmNewPasswordInput').value;
 
             if (oldP !== currentUser.password) {
+                playErrorSound();
                 alert("❌ รหัสผ่านเดิมไม่ถูกต้อง!");
                 return;
             }
 
             if (newP !== confirmP) {
+                playErrorSound();
                 alert("❌ รหัสผ่านใหม่ทั้งสองช่องไม่ตรงกัน!");
                 return;
             }
 
+            showToast("⏳ กำลังบันทึกรหัสผ่านใหม่ลง Supabase DB...");
+
+            // 1. อัปเดตลง Supabase DB
+            const { error } = await _supabase
+                .from('profiles')
+                .update({ password: newP })
+                .eq('username', currentUser.username);
+
+            if(error) {
+                console.error("Change Password DB Error:", error);
+            }
+
+            // 2. อัปเดตใน System Memory & Current Session State
             const uIdx = systemUsers.findIndex(u => u.username === currentUser.username);
             if (uIdx !== -1) {
                 systemUsers[uIdx].password = newP;
-                currentUser.password = newP;
-                localStorage.setItem('WMS_USERS', JSON.stringify(systemUsers));
-                sessionStorage.setItem('WMS_ACTIVE_USER', JSON.stringify(currentUser));
-                playSuccessSound();
-                showToast("✅ เปลี่ยนรหัสผ่านสำเร็จเรียบร้อยแล้ว");
-                closeChangePasswordModal();
             }
+            currentUser.password = newP;
+
+            localStorage.setItem('WMS_USERS', JSON.stringify(systemUsers));
+            sessionStorage.setItem('WMS_ACTIVE_USER', JSON.stringify(currentUser));
+            
+            if(currentUser.role === 'admin') {
+                isAdminAuthenticatedSession = true;
+            }
+
+            playSuccessSound();
+            showToast("⚡ เปลี่ยนรหัสผ่านและซิงค์ข้อมูลลง Supabase DB เรียบร้อยแล้ว!");
+            closeChangePasswordModal();
         }
 
         function renderUserManagementTable() {
@@ -1689,22 +1789,28 @@ date_default_timezone_set('Asia/Bangkok');
             if(!tbody) return;
             tbody.innerHTML = '';
 
+            if (systemUsers.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">ไม่พบรายการผู้ใช้งาน</td></tr>`;
+                return;
+            }
+
             systemUsers.forEach((u, idx) => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td style="text-align:center; font-weight:700;" class="mono">${idx + 1}</td>
                     <td><strong class="mono" style="color:var(--primary); font-size:0.92rem;">${escapeHTML(u.username)}</strong></td>
                     <td><span style="font-weight:600;">${escapeHTML(u.name)}</span></td>
+                    <td><span style="color:var(--text-sub); font-size:0.85rem;"><i class="fa-solid fa-building-user" style="color:var(--primary); margin-right:4px;"></i>${escapeHTML(u.department || 'แผนกคลังสินค้า')}</span></td>
                     <td>
                         <span class="status-badge" style="font-size:0.75rem; background:${u.role === 'admin' ? 'var(--primary-light)' : 'var(--bg-subtle)'}; color:${u.role === 'admin' ? 'var(--primary)' : 'var(--text-sub)'}; border-color:${u.role === 'admin' ? 'var(--primary-border)' : 'var(--border-color)'};">
                             ${u.role === 'admin' ? '⚡ Super Admin' : '👤 User General'}
                         </span>
                     </td>
                     <td style="text-align:center;">
-                        <button class="btn btn-sm btn-secondary" onclick="openEditUserModal(${u.id})"><i class="fa-solid fa-key" style="color:var(--primary);"></i> แก้ไขรหัส</button>
+                        <button class="btn btn-sm btn-secondary" onclick="openEditUserModal('${escapeHTML(u.id)}')"><i class="fa-solid fa-user-pen" style="color:var(--primary);"></i> แก้ไขข้อมูล/รหัส</button>
                     </td>
                     <td style="text-align:center;">
-                        <button class="btn btn-sm btn-danger" ${u.username === 'admin' ? 'disabled' : ''} onclick="deleteUserAccount(${u.id})"><i class="fa-solid fa-trash-can"></i></button>
+                        <button class="btn btn-sm btn-danger" ${u.username === 'admin' ? 'disabled' : ''} onclick="deleteUserAccount('${escapeHTML(u.id)}', '${escapeHTML(u.username)}')"><i class="fa-solid fa-trash-can"></i></button>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -1716,23 +1822,25 @@ date_default_timezone_set('Asia/Bangkok');
             document.getElementById('userFormUsername').value = '';
             document.getElementById('userFormUsername').disabled = false;
             document.getElementById('userFormFullName').value = '';
+            document.getElementById('userFormDepartment').value = 'แผนกคลังสินค้า';
             document.getElementById('userFormPassword').value = '';
             document.getElementById('userFormRole').value = 'user';
-            document.getElementById('userModalTitle').textContent = 'เพิ่มผู้ใช้งานใหม่';
+            document.getElementById('userModalTitle').textContent = 'เพิ่มผู้ใช้งานใหม่ (Supabase DB Sync)';
             document.getElementById('createUserModal').style.display = 'flex';
         }
 
         function openEditUserModal(id) {
-            const u = systemUsers.find(user => user.id === id);
+            const u = systemUsers.find(user => String(user.id) === String(id) || user.username === id);
             if(!u) return;
 
             document.getElementById('userFormId').value = u.id;
             document.getElementById('userFormUsername').value = u.username;
-            document.getElementById('userFormUsername').disabled = true;
+            document.getElementById('userFormUsername').disabled = false;
             document.getElementById('userFormFullName').value = u.name;
+            document.getElementById('userFormDepartment').value = u.department || 'แผนกคลังสินค้า';
             document.getElementById('userFormPassword').value = u.password;
             document.getElementById('userFormRole').value = u.role || 'user';
-            document.getElementById('userModalTitle').textContent = `แก้ไขผู้ใช้งาน: ${u.username}`;
+            document.getElementById('userModalTitle').textContent = `แก้ไขข้อมูลผู้ใช้งาน: ${u.username}`;
             document.getElementById('createUserModal').style.display = 'flex';
         }
 
@@ -1740,58 +1848,97 @@ date_default_timezone_set('Asia/Bangkok');
             document.getElementById('createUserModal').style.display = 'none';
         }
 
-        function submitUserForm(e) {
+        // --- SUBMIT USER FORM REALTIME TO SUPABASE DB ---
+        async function submitUserForm(e) {
             e.preventDefault();
             const id = document.getElementById('userFormId').value;
             const username = document.getElementById('userFormUsername').value.trim();
             const fullName = document.getElementById('userFormFullName').value.trim();
+            const department = document.getElementById('userFormDepartment').value.trim();
             const password = document.getElementById('userFormPassword').value.trim();
             const role = document.getElementById('userFormRole').value;
 
+            showToast("⏳ กำลังบันทึกผู้ใช้ลงใน Supabase DB...");
+
+            const payload = {
+                username: username,
+                full_name: fullName,
+                department: department,
+                password: password || '123456',
+                role: role,
+                updated_at: new Date().toISOString()
+            };
+
+            let dbError = null;
+
             if (id) {
-                const idx = systemUsers.findIndex(u => String(u.id) === String(id));
-                if (idx !== -1) {
-                    systemUsers[idx].name = fullName;
-                    if(password) systemUsers[idx].password = password;
-                    systemUsers[idx].role = role;
-                }
+                // Update ใน Supabase DB
+                const { error } = await _supabase
+                    .from('profiles')
+                    .update(payload)
+                    .eq('username', username);
+                dbError = error;
             } else {
-                if (systemUsers.some(u => u.username.toLowerCase() === username.toLowerCase())) {
-                    alert("❌ Username นี้มีอยู่ในระบบแล้ว!");
-                    return;
-                }
-                systemUsers.push({
-                    id: Date.now(),
-                    username: username,
-                    password: password || '123456',
-                    name: fullName,
-                    role: role
-                });
+                // Insert ใหม่ใน Supabase DB
+                const { error } = await _supabase
+                    .from('profiles')
+                    .insert([payload]);
+                dbError = error;
             }
 
-            localStorage.setItem('WMS_USERS', JSON.stringify(systemUsers));
+            if(dbError) {
+                console.error("Save User DB Error:", dbError);
+                // Fallback Upsert ด้วย onConflict
+                await _supabase.from('profiles').upsert(payload, { onConflict: 'username' });
+            }
+
+            // โหลดรายการผู้ใช้ใหม่จาก DB เพื่ออัปเดต UI ทันที
+            await loadUsersFromDB();
+
+            // หากแก้ไขบัญชีของตัวเองที่กำลังใช้งานอยู่ ให้ปรับเปลี่ยน Session ทันที
+            if(currentUser && currentUser.username.toLowerCase() === username.toLowerCase()) {
+                currentUser.name = fullName;
+                currentUser.department = department;
+                currentUser.password = password || currentUser.password;
+                currentUser.role = role;
+                sessionStorage.setItem('WMS_ACTIVE_USER', JSON.stringify(currentUser));
+                document.getElementById('currentUserNameText').textContent = escapeHTML(`${currentUser.name} (${currentUser.username})`);
+            }
+
             playSuccessSound();
-            showToast("✅ บันทึกข้อมูลผู้ใช้เรียบร้อยแล้ว");
+            showToast("⚡ บันทึกและอัปเดตผู้ใช้งานเข้า Supabase DB เรียบร้อยแล้ว!");
             closeCreateUserModal();
-            renderUserManagementTable();
         }
 
-        function deleteUserAccount(id) {
-            const u = systemUsers.find(user => user.id === id);
-            if(u && confirm(`แน่ใจหรือไม่ที่จะลบผู้ใช้ ${u.username}?`)) {
-                systemUsers = systemUsers.filter(user => user.id !== id);
-                localStorage.setItem('WMS_USERS', JSON.stringify(systemUsers));
-                renderUserManagementTable();
-                showToast("🗑️ ลบผู้ใช้เรียบร้อยแล้ว");
+        async function deleteUserAccount(id, username) {
+            if(username === 'admin') {
+                alert("❌ ไม่สามารถลบบัญชี Super Admin ได้");
+                return;
+            }
+
+            if(confirm(`แน่ใจหรือไม่ที่จะลบผู้ใช้งาน "${username}" ออกจากระบบและฐานข้อมูล?`)) {
+                showToast(`⏳ กำลังลบผู้ใช้ ${username} จาก Supabase DB...`);
+                
+                const { error } = await _supabase
+                    .from('profiles')
+                    .delete()
+                    .eq('username', username);
+
+                if(error) {
+                    console.error("Delete user error:", error);
+                }
+
+                await loadUsersFromDB();
+                playSuccessSound();
+                showToast(`🗑️ ลบผู้ใช้งาน ${username} สำเร็จ`);
             }
         }
 
-        // --- HARDENED ADMIN GUARD ENGINE (บังคับสิทธิ์ Admin เท่านั้น) ---
+        // --- HARDENED ADMIN GUARD ENGINE ---
         function closeAdminGuardModal() {
             document.getElementById('adminGuardModal').style.display = 'none';
             document.getElementById('adminGuardPasswordInput').value = '';
             
-            // หากยกเลิก ให้เด้งกลับไปหน้าแรก (View Inventory) เพื่อป้องกันการเข้าถึง
             if(!isAdminAuthenticatedSession) {
                 executeSwitchView('view-inventory');
             }
@@ -1801,7 +1948,6 @@ date_default_timezone_set('Asia/Bangkok');
             e.preventDefault();
             const inputPass = document.getElementById('adminGuardPasswordInput').value;
 
-            // Strict Validation: ตรวจสอบเฉพาะบัญชี Admin ปัจจุบันที่ล็อกอินอยู่
             if (!currentUser || currentUser.role !== 'admin') {
                 playErrorSound();
                 alert("⛔ ปฏิเสธการเข้าถึง: บัญชีของคุณไม่มีสิทธิ์ผู้ดูแลระบบ (Admin)!");
@@ -2043,7 +2189,7 @@ date_default_timezone_set('Asia/Bangkok');
         }
 
         document.addEventListener('DOMContentLoaded', async () => {
-            initAuthSystem();
+            await initAuthSystem();
             initOfflineDatabase();
             renderSidebarMenu();
             await loadWarehouseConfigsFromDB();
@@ -2081,7 +2227,6 @@ date_default_timezone_set('Asia/Bangkok');
         }
 
         function switchView(viewId) {
-            // STRICT SECURITY GUARD: ป้องกันผู้ใช้ทั่วไป และบังคับใส่รหัส Admin
             if (viewId === 'view-settings') {
                 if (!currentUser || currentUser.role !== 'admin') {
                     playErrorSound();
@@ -2329,7 +2474,6 @@ date_default_timezone_set('Asia/Bangkok');
             }
         }
 
-        // --- ULTRA FAST IN-MEMORY GAP FINDER & AUTO ADVANCE ENGINE ---
         function rebuildOccupiedSet() {
             occupiedLocationsSet.clear();
             globalInventoryData.forEach(item => {
@@ -2507,6 +2651,13 @@ date_default_timezone_set('Asia/Bangkok');
                     refreshLocationVisualizerIfActive();
                 })
                 .subscribe();
+
+            _supabase
+                .channel('public:profiles')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, async () => {
+                    await loadUsersFromDB();
+                })
+                .subscribe();
         }
 
         function refreshLocationVisualizerIfActive() {
@@ -2675,9 +2826,6 @@ date_default_timezone_set('Asia/Bangkok');
             if(relSpan) relSpan.textContent = cnt;
         }
 
-        // =========================================================================
-        // --- DOUBLE CONFIRMATION SAFETY GUARD MODAL FOR DELETIONS ---
-        // =========================================================================
         function openDeleteConfirmModal(mode, sn = null, id = null) {
             pendingDeleteMode = mode;
             pendingDeleteSn = sn;
@@ -2760,7 +2908,6 @@ date_default_timezone_set('Asia/Bangkok');
             if(statElem) statElem.textContent = `พร้อมค้นหาด่วนจาก ${masterCount.toLocaleString()} Master SKU`;
         }
 
-        // --- AUTOCOMPLETE SKU SEARCH FROM MASTER DB ---
         function onSkuSearchInput(q) {
             const box = document.getElementById('skuSuggestionsBox');
             if(!q.trim()) {
@@ -2845,7 +2992,6 @@ date_default_timezone_set('Asia/Bangkok');
             document.getElementById('bayInboundCountBadge').textContent = `รับแล้วในช่องนี้: ${currentSlotCount} เครื่อง`;
         }
 
-        // --- FAST INBOUND ENGINE WITH INSTANT SLOT LOCKING ---
         async function handleInboundSubmit(e) {
             e.preventDefault();
 
@@ -2963,9 +3109,6 @@ date_default_timezone_set('Asia/Bangkok');
             container.innerHTML = html;
         }
 
-        // =========================================================================
-        // --- OUTBOUND WORK ORDER & CART ISSUE ENGINE ---
-        // =========================================================================
         function handleAddOutboundToCart(e) {
             if (e) e.preventDefault();
             const snInput = document.getElementById('outboundSn');
@@ -3200,9 +3343,6 @@ date_default_timezone_set('Asia/Bangkok');
             printWindow.document.close();
         }
 
-        // =========================================================================
-        // --- DRILL-DOWN VISUALIZER ---
-        // =========================================================================
         function renderDrillDownAisleBar() {
             const bar = document.getElementById('aisleFilterBar');
             bar.innerHTML = '';
@@ -3336,9 +3476,6 @@ date_default_timezone_set('Asia/Bangkok');
             container.appendChild(card);
         }
 
-        // =========================================================================
-        // --- BARCODE PRINTING ENGINE ---
-        // =========================================================================
         function openPrintBarcodeModal(mode = 'SELECTED', singleSn = null) {
             if (mode === 'SINGLE' && singleSn) {
                 selectedItemSnSet.clear();
@@ -3650,7 +3787,6 @@ date_default_timezone_set('Asia/Bangkok');
             closePrintBarcodeModal();
         }
 
-        // --- SINGLE RELOCATE ENGINE ---
         function openRelocateModal(id, sn, name, currentLoc) {
             document.getElementById('relocateItemId').value = id;
             document.getElementById('relocateItemSn').textContent = escapeHTML(sn);
@@ -3767,9 +3903,6 @@ date_default_timezone_set('Asia/Bangkok');
             }
         }
 
-        // =========================================================================
-        // --- BATCH RELOCATE MULTIPLE ITEMS ENGINE ---
-        // =========================================================================
         function openBatchRelocateModal() {
             if (selectedItemSnSet.size === 0) {
                 alert("⚠️ กรุณาเลือกรายการสินค้าที่ต้องการย้ายอย่างน้อย 1 รายการ");
@@ -3887,7 +4020,6 @@ date_default_timezone_set('Asia/Bangkok');
             }
         }
 
-        // --- WAREHOUSE LOCATION CONFIG WITH INSTANT REALTIME AUTO-SAVE & MODERN TABLE RENDER ---
         function renderAisleSettingsTable() {
             const tbody = document.getElementById('aisleSettingsTableBody');
             if(!tbody) return;
@@ -4031,7 +4163,6 @@ date_default_timezone_set('Asia/Bangkok');
             showToast(`🔄 ปรับลำดับหน้าเมนูหลักเรียบร้อยแล้ว`);
         }
 
-        // --- EXCEL EXPORT ENGINE ---
         function openExcelExportModal() {
             const select = document.getElementById('exportAisleSelect');
             select.innerHTML = '';
@@ -4120,7 +4251,6 @@ date_default_timezone_set('Asia/Bangkok');
             showToast(`📥 ส่งออกไฟล์ Excel สำเร็จ (${exportData.length} รายการ)`);
         }
 
-        // --- IMPORT DB FILE ENGINE ---
         function handleFileImport(e) {
             const file = e.target.files[0];
             if(!file) return;

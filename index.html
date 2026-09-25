@@ -1,6 +1,6 @@
 <?php 
 // =========================================================================
-// --- WMS Enterprise Suite v2026 Ultimate (Fully Synced & Fixed Engine) ---
+// --- WMS Enterprise Suite v2026 Hardened Edition (Security & Multi-User) ---
 // =========================================================================
 session_start();
 date_default_timezone_set('Asia/Bangkok');
@@ -10,7 +10,9 @@ date_default_timezone_set('Asia/Bangkok');
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบบริหารจัดการคลังสินค้า (WMS Enterprise Ultimate)</title>
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <title>ระบบบริหารจัดการคลังสินค้า (WMS Enterprise Ultimate Security)</title>
     
     <!-- Google Fonts & Font Awesome Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
@@ -68,6 +70,40 @@ date_default_timezone_set('Asia/Bangkok');
             overflow: hidden;
         }
         .mono { font-family: 'JetBrains Mono', monospace; }
+
+        /* Auth Lock Overlay */
+        .login-overlay {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 999999;
+            padding: 20px;
+        }
+        .login-card {
+            background: #ffffff;
+            width: 100%;
+            max-width: 420px;
+            border-radius: var(--radius-lg);
+            padding: 2.2rem;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+            text-align: center;
+        }
+        .login-brand-icon {
+            width: 60px;
+            height: 60px;
+            background: var(--primary);
+            color: #ffffff;
+            border-radius: 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 10px 20px rgba(37, 99, 235, 0.3);
+        }
 
         /* Fullscreen Layout Structure */
         .sidebar {
@@ -178,6 +214,19 @@ date_default_timezone_set('Asia/Bangkok');
             box-shadow: 0 0 8px var(--danger);
         }
 
+        .user-profile-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--primary-light);
+            border: 1px solid var(--primary-border);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
         .content-area {
             flex: 1;
             padding: 1.25rem;
@@ -210,6 +259,86 @@ date_default_timezone_set('Asia/Bangkok');
             align-items: center;
             gap: 10px;
             color: var(--text-main);
+        }
+
+        /* Modern UI Improvements for Settings Page */
+        .settings-hero-banner {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            color: #ffffff;
+            border-radius: var(--radius-lg);
+            padding: 1.5rem 1.8rem;
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 10px 20px rgba(15, 23, 42, 0.15);
+            position: relative;
+            overflow: hidden;
+        }
+        .settings-hero-banner::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(37,99,235,0.25) 0%, rgba(0,0,0,0) 70%);
+            pointer-events: none;
+        }
+
+        .settings-section-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 1.5rem;
+            transition: all 0.2s ease;
+        }
+        .settings-section-card:hover {
+            box-shadow: var(--shadow-md);
+        }
+
+        .settings-bar-container {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.25rem;
+        }
+
+        .modern-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: 0.88rem;
+        }
+        .modern-table th {
+            background: #f8fafc;
+            color: var(--text-sub);
+            font-weight: 700;
+            padding: 12px 16px;
+            border-bottom: 2px solid var(--border-strong);
+            text-transform: uppercase;
+            font-size: 0.78rem;
+            letter-spacing: 0.5px;
+        }
+        .modern-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+            background: #ffffff;
+            transition: background 0.15s ease;
+        }
+        .modern-table tbody tr:hover td {
+            background: var(--primary-light);
+        }
+        .modern-table tbody tr:last-child td {
+            border-bottom: none;
         }
 
         /* KPI Dashboard Grid */
@@ -499,12 +628,12 @@ date_default_timezone_set('Asia/Bangkok');
         .modal-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(15, 23, 42, 0.6);
+            background: rgba(15, 23, 42, 0.65);
             display: flex;
             align-items: center;
             justify-content: center;
             z-index: 9999;
-            backdrop-filter: blur(3px);
+            backdrop-filter: blur(4px);
         }
 
         .toast {
@@ -611,6 +740,32 @@ date_default_timezone_set('Asia/Bangkok');
 </head>
 <body>
 
+    <!-- SYSTEM AUTH LOGIN OVERLAY (บังคับล็อกอินทุกครั้งที่เปิดเว็บใหม่) -->
+    <div id="loginOverlay" class="login-overlay">
+        <div class="login-card">
+            <div class="login-brand-icon"><i class="fa-solid fa-boxes-stacked"></i></div>
+            <h2 style="font-weight: 800; font-size: 1.35rem; color: var(--text-main); margin-bottom: 4px;">เข้าสู่ระบบ WMS System</h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">กรุณากรอก Username และ Password เพื่อเข้าใช้งาน</p>
+
+            <form id="loginForm" onsubmit="handleSystemLogin(event)" autocomplete="off">
+                <div class="form-group" style="text-align: left;">
+                    <label for="loginUsername"><i class="fa-solid fa-user" style="color:var(--primary);"></i> ชื่อผู้ใช้งาน (Username)</label>
+                    <input type="text" id="loginUsername" class="form-control mono" placeholder="เช่น admin" required autofocus autocomplete="off">
+                </div>
+                <div class="form-group" style="text-align: left; margin-bottom: 1.2rem;">
+                    <label for="loginPassword"><i class="fa-solid fa-key" style="color:var(--primary);"></i> รหัสผ่าน (Password)</label>
+                    <input type="password" id="loginPassword" class="form-control mono" placeholder="••••••••" required autocomplete="off">
+                </div>
+                <button type="submit" id="loginSubmitBtn" class="btn btn-primary" style="width: 100%; padding: 11px; font-size: 1rem; border-radius: var(--radius-md);">
+                    <i class="fa-solid fa-right-to-bracket"></i> ยืนยันเข้าสู่ระบบ
+                </button>
+            </form>
+            <div id="loginErrorAlert" style="display: none; color: var(--danger); font-size: 0.82rem; font-weight: 600; margin-top: 1rem;">
+                <i class="fa-solid fa-circle-exclamation"></i> <span id="loginErrorMsg">Username หรือ Password ไม่ถูกต้อง!</span>
+            </div>
+        </div>
+    </div>
+
     <!-- Sidebar Navigation Menu -->
     <aside class="sidebar">
         <div class="sidebar-brand">
@@ -632,11 +787,14 @@ date_default_timezone_set('Asia/Bangkok');
             </div>
             
             <div style="display:flex; align-items:center; gap:10px;">
-                <button class="btn btn-sm btn-secondary" onclick="playSuccessSound()" title="ทดสอบเสียงสแกนสำเร็จ">
-                    <i class="fa-solid fa-volume-high" style="color:var(--success);"></i> เสียงรับ
+                <div class="user-profile-badge" id="currentUserBadge">
+                    <i class="fa-solid fa-user-circle"></i> <span id="currentUserNameText">admin</span>
+                </div>
+                <button class="btn btn-sm btn-secondary" onclick="openChangePasswordModal()" title="เปลี่ยนรหัสผ่านผู้ใช้">
+                    <i class="fa-solid fa-key" style="color:var(--primary);"></i> เปลี่ยนรหัส
                 </button>
-                <button class="btn btn-sm btn-secondary" onclick="playErrorSound()" title="ทดสอบเสียงสแกนผิดพลาด">
-                    <i class="fa-solid fa-triangle-exclamation" style="color:var(--danger);"></i> เสียงเตือน
+                <button class="btn btn-sm btn-secondary" onclick="handleSystemLogout()" title="ออกจากระบบ">
+                    <i class="fa-solid fa-right-from-bracket" style="color:var(--danger);"></i>
                 </button>
                 <div class="status-badge" id="dbStatusBadge">
                     <span class="pulse-dot" id="dbPulseDot"></span>
@@ -947,67 +1105,218 @@ date_default_timezone_set('Asia/Bangkok');
                 </div>
             </section>
 
-            <!-- VIEW 5: WAREHOUSE LOCATION CONFIG WITH INSTANT DB PERSISTENCE -->
+            <!-- VIEW 5: WAREHOUSE LOCATION CONFIG & ADMIN USER MANAGEMENT (UPDATED HARDENED UX UI) -->
             <section id="view-settings" class="view-section">
-                <div class="card" style="width:100%;">
-                    <div class="card-header">
-                        <div class="card-title"><i class="fa-solid fa-gears" style="color:var(--primary);"></i> ตั้งค่าพิกัดคลังสินค้า (ซิงค์บันทึกเข้า DB อัตโนมัติทันที 100%)</div>
-                        <span class="status-badge"><i class="fa-solid fa-bolt" style="color:var(--success);"></i> Realtime Database Sync</span>
-                    </div>
-
-                    <!-- Aisle & Location Config Table -->
-                    <div style="margin-bottom:1.5rem;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.8rem; flex-wrap:wrap; gap:0.5rem;">
-                            <strong style="font-size:0.95rem; color:var(--text-main);"><i class="fa-solid fa-layer-group" style="color:var(--primary);"></i> ตั้งค่าแถวจัดเก็บ (Aisles), ล็อก, ชั้น และจำนวนช่องย่อย:</strong>
-                            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-                                <input type="text" id="newAisleInput" class="form-control mono" style="width:150px; padding:6px 10px;" placeholder="ชื่อแถวใหม่ เช่น E">
-                                <button class="btn btn-primary" onclick="addNewAisleConfig()"><i class="fa-solid fa-plus"></i> เพิ่มแถวจัดเก็บ</button>
-                                <button class="btn btn-success" onclick="saveAllWarehouseConfigsToDB()"><i class="fa-solid fa-floppy-disk"></i> บันทึกพิกัดทั้งหมดเข้า DB (Sync All Rows)</button>
-                            </div>
-                        </div>
-
-                        <div class="table-responsive" style="max-height: initial;">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th style="width:50px; text-align:center;">ลำดับ</th>
-                                        <th style="width:140px;">ชื่อแถว (Aisle)</th>
-                                        <th style="width:140px; text-align:center;">จำนวนล็อกในแถว</th>
-                                        <th style="width:140px; text-align:center;">จำนวนชั้น (Shelves)</th>
-                                        <th style="width:140px; text-align:center;">จำนวนช่องย่อย (Slots)</th>
-                                        <th style="width:120px; text-align:center;">สินค้าในแถว</th>
-                                        <th style="width:160px; text-align:center;">สลับลำดับ / ลบแถว</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="aisleSettingsTableBody"></tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- Sidebar Menu Reorder Table -->
+                
+                <!-- Modern Hero Banner -->
+                <div class="settings-hero-banner">
                     <div>
-                        <label style="font-weight:700; margin-bottom:0.5rem; display:block;">
-                            <i class="fa-solid fa-bars-staggered" style="color:var(--primary);"></i> จัดลำดับการแสดงผลแถบเมนูหลัก (Sidebar Menu Reorder):
-                        </label>
-                        <div class="table-responsive" style="max-height: initial;">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th style="width:60px; text-align:center;">ลำดับ</th>
-                                        <th>ชื่อเมนู</th>
-                                        <th>รหัส View Section</th>
-                                        <th style="text-align:center;">สลับตำแหน่งเมนู</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="menuReorderTableBody"></tbody>
-                            </table>
+                        <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+                            <span style="background:rgba(255,255,255,0.15); padding:4px 12px; border-radius:20px; font-size:0.75rem; font-weight:700; letter-spacing:0.5px; color:#60a5fa;" class="mono">
+                                <i class="fa-solid fa-shield-halved"></i> ADMIN AUTHORIZED ONLY
+                            </span>
+                        </div>
+                        <h2 style="font-size:1.4rem; font-weight:800; margin-bottom:4px;">ตั้งค่าพิกัดคลังสินค้า และ จัดการผู้ใช้งาน</h2>
+                        <p style="font-size:0.85rem; color:#94a3b8; font-weight:400;">จัดการความจุแถวจัดเก็บ (Aisles) โครงสร้างชั้นวาง และสิทธิ์ผู้ใช้งานทั้งหมดในระบบ</p>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <button class="btn btn-sm btn-secondary" style="background:rgba(255,255,255,0.1); border-color:rgba(255,255,255,0.2); color:#fff;" onclick="loadWarehouseConfigsFromDB(); renderAisleSettingsTable(); renderUserManagementTable();">
+                            <i class="fa-solid fa-rotate"></i> รีเฟรชข้อมูล
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Section 1: Aisle & Location Config Table -->
+                <div class="settings-section-card">
+                    <div class="card-header" style="border-bottom:none; margin-bottom:0.5rem; padding-bottom:0;">
+                        <div class="card-title" style="font-size:1.1rem; color:var(--text-main);">
+                            <i class="fa-solid fa-layer-group" style="color:var(--primary);"></i> ตั้งค่าโครงสร้างแถวจัดเก็บ (Aisle Configurations)
+                        </div>
+                        <span class="status-badge" style="background:var(--primary-light); color:var(--primary); border-color:var(--primary-border);">
+                            <i class="fa-solid fa-database"></i> Realtime Sync DB
+                        </span>
+                    </div>
+
+                    <div class="settings-bar-container">
+                        <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:280px;">
+                            <input type="text" id="newAisleInput" class="form-control mono" style="font-weight:700;" placeholder="ชื่อแถวใหม่ เช่น E">
+                            <button class="btn btn-primary" style="white-space:nowrap;" onclick="addNewAisleConfig()">
+                                <i class="fa-solid fa-plus"></i> เพิ่มแถวใหม่
+                            </button>
+                        </div>
+                        <div>
+                            <button class="btn btn-success" onclick="saveAllWarehouseConfigsToDB()">
+                                <i class="fa-solid fa-floppy-disk"></i> บันทึกโครงสร้างทั้งหมดลง DB
+                            </button>
                         </div>
                     </div>
 
+                    <div class="table-responsive">
+                        <table class="modern-table">
+                            <thead>
+                                <tr>
+                                    <th style="width:60px; text-align:center;">ลำดับ</th>
+                                    <th style="width:160px;">ชื่อแถว (Aisle)</th>
+                                    <th style="width:150px; text-align:center;">จำนวนล็อกในแถว</th>
+                                    <th style="width:150px; text-align:center;">จำนวนชั้น (Shelves)</th>
+                                    <th style="width:150px; text-align:center;">จำนวนช่องย่อย (Slots)</th>
+                                    <th style="width:130px; text-align:center;">สินค้าสะสม</th>
+                                    <th style="width:180px; text-align:center;">จัดการ / สลับลำดับ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="aisleSettingsTableBody"></tbody>
+                        </table>
+                    </div>
                 </div>
+
+                <!-- Section 2: User Management Section (Multi-User Control Panel) -->
+                <div class="settings-section-card">
+                    <div class="card-header" style="border-bottom:none; margin-bottom:1rem; padding-bottom:0;">
+                        <div class="card-title" style="font-size:1.1rem; color:var(--text-main);">
+                            <i class="fa-solid fa-users-gear" style="color:var(--primary);"></i> จัดการบัญชีผู้ใช้งานและกำหนดสิทธิ์ (Multi-User Control Panel)
+                        </div>
+                        <button class="btn btn-sm btn-primary" onclick="openCreateUserModal()">
+                            <i class="fa-solid fa-user-plus"></i> เพิ่มผู้ใช้งานใหม่
+                        </button>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="modern-table">
+                            <thead>
+                                <tr>
+                                    <th style="width:60px; text-align:center;">#</th>
+                                    <th>Username</th>
+                                    <th>ชื่อ-นามสกุล / แผนก</th>
+                                    <th>ระดับสิทธิ์ (Role)</th>
+                                    <th style="text-align:center; width:150px;">แก้ไขรหัสผ่าน</th>
+                                    <th style="text-align:center; width:90px;">ลบผู้ใช้</th>
+                                </tr>
+                            </thead>
+                            <tbody id="userManagementTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Section 3: Sidebar Menu Reorder Table -->
+                <div class="settings-section-card">
+                    <div class="card-header" style="border-bottom:none; margin-bottom:1rem; padding-bottom:0;">
+                        <div class="card-title" style="font-size:1.1rem; color:var(--text-main);">
+                            <i class="fa-solid fa-bars-staggered" style="color:var(--primary);"></i> จัดลำดับการแสดงผลเมนูหลัก (Sidebar Menu Reorder)
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="modern-table">
+                            <thead>
+                                <tr>
+                                    <th style="width:60px; text-align:center;">ลำดับ</th>
+                                    <th>ชื่อเมนู</th>
+                                    <th>รหัส View Section</th>
+                                    <th style="text-align:center; width:180px;">สลับตำแหน่งเมนู</th>
+                                </tr>
+                            </thead>
+                            <tbody id="menuReorderTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
             </section>
 
         </main>
+    </div>
+
+    <!-- MODAL: STRICT ADMIN AUTHENTICATION GUARD LOCK -->
+    <div id="adminGuardModal" class="modal-overlay" style="display:none;">
+        <div class="card" style="width: 440px; max-width: 90vw; text-align:center; border-top: 5px solid var(--danger); padding:2rem;">
+            <div style="width:65px; height:65px; background:var(--danger-light); color:var(--danger); border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:1.8rem; margin-bottom:1rem; border:1px solid #fca5a5;">
+                <i class="fa-solid fa-user-shield"></i>
+            </div>
+            <h3 style="font-weight: 800; font-size: 1.25rem; color: var(--text-main); margin-bottom: 6px;">ยืนยันสิทธิ์ผู้ดูแลระบบ (Admin Only)</h3>
+            <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:1.2rem;">สงวนสิทธิ์เฉพาะผู้ดูแลระบบที่มีบทบาท Admin เท่านั้น กรุณากรอกรหัสผ่านเพื่อยืนยันตัวตน</p>
+            
+            <div style="background:var(--bg-subtle); padding:8px; border-radius:8px; margin-bottom:1.2rem; border:1px solid var(--border-color); font-size:0.85rem;">
+                บัญชีปัจจุบัน: <strong id="adminGuardAccountName" class="mono" style="color:var(--primary);">admin</strong>
+            </div>
+
+            <form onsubmit="verifyAdminGuardPassword(event)">
+                <div class="form-group" style="text-align:left;">
+                    <label style="font-size:0.8rem; color:var(--text-sub);"><i class="fa-solid fa-key"></i> รหัสผ่านผู้ดูแลระบบ (Admin Password)</label>
+                    <input type="password" id="adminGuardPasswordInput" class="form-control mono" placeholder="••••••••" required style="text-align:center; font-size:1.2rem; letter-spacing:3px;" autofocus autocomplete="off">
+                </div>
+                <div style="display:flex; gap:0.5rem; margin-top:1.2rem;">
+                    <button type="submit" class="btn btn-primary" style="flex:1; padding:10px;"><i class="fa-solid fa-shield-check"></i> ยืนยันสิทธิ์เข้าใช้งาน</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeAdminGuardModal()">ยกเลิก</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: CHANGE PASSWORD -->
+    <div id="changePasswordModal" class="modal-overlay" style="display:none;">
+        <div class="card" style="width: 420px; max-width: 90vw;">
+            <div class="card-header">
+                <div class="card-title"><i class="fa-solid fa-key" style="color:var(--primary);"></i> เปลี่ยนรหัสผ่านผู้ใช้งาน</div>
+                <button class="btn btn-secondary" style="padding:4px 8px;" onclick="closeChangePasswordModal()">&times;</button>
+            </div>
+
+            <form onsubmit="submitChangePassword(event)">
+                <div class="form-group">
+                    <label>รหัสผ่านเดิม</label>
+                    <input type="password" id="oldPasswordInput" class="form-control mono" required>
+                </div>
+                <div class="form-group">
+                    <label>รหัสผ่านใหม่</label>
+                    <input type="password" id="newPasswordInput" class="form-control mono" required minlength="4">
+                </div>
+                <div class="form-group" style="margin-bottom:1.2rem;">
+                    <label>ยืนยันรหัสผ่านใหม่</label>
+                    <input type="password" id="confirmNewPasswordInput" class="form-control mono" required minlength="4">
+                </div>
+
+                <div style="display:flex; gap:0.5rem;">
+                    <button type="submit" class="btn btn-primary" style="flex:1;"><i class="fa-solid fa-floppy-disk"></i> บันทึกรหัสผ่านใหม่</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeChangePasswordModal()">ยกเลิก</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: CREATE / EDIT USER -->
+    <div id="createUserModal" class="modal-overlay" style="display:none;">
+        <div class="card" style="width: 440px; max-width: 90vw;">
+            <div class="card-header">
+                <div class="card-title"><i class="fa-solid fa-user-plus" style="color:var(--primary);"></i> <span id="userModalTitle">เพิ่มผู้ใช้งานใหม่</span></div>
+                <button class="btn btn-secondary" style="padding:4px 8px;" onclick="closeCreateUserModal()">&times;</button>
+            </div>
+
+            <form onsubmit="submitUserForm(event)">
+                <input type="hidden" id="userFormId">
+                <div class="form-group">
+                    <label>Username (ชื่อใช้เข้าสู่ระบบ)</label>
+                    <input type="text" id="userFormUsername" class="form-control mono" required pattern="[a-zA-Z0-9_-]+" title="ใช้ตัวอักษรภาษาอังกฤษ ตัวเลข และ - _ ได้เท่านั้น">
+                </div>
+                <div class="form-group">
+                    <label>ชื่อ-นามสกุล / รายละเอียดผู้ใช้งาน</label>
+                    <input type="text" id="userFormFullName" class="form-control" required placeholder="เช่น นายสมชาย (เจ้าหน้าที่คลัง)">
+                </div>
+                <div class="form-group">
+                    <label>รหัสผ่าน (Password)</label>
+                    <input type="password" id="userFormPassword" class="form-control mono" placeholder="กรอกรหัสผ่าน...">
+                </div>
+                <div class="form-group" style="margin-bottom:1.2rem;">
+                    <label>ระดับสิทธิ์ (Role)</label>
+                    <select id="userFormRole" class="form-select">
+                        <option value="user">User (ผู้ใช้งานทั่วไป)</option>
+                        <option value="admin">Admin (ผู้ดูแลระบบ)</option>
+                    </select>
+                </div>
+
+                <div style="display:flex; gap:0.5rem;">
+                    <button type="submit" class="btn btn-primary" style="flex:1;"><i class="fa-solid fa-save"></i> บันทึกข้อมูลผู้ใช้</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeCreateUserModal()">ยกเลิก</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <!-- MODAL: DELETE CONFIRMATION SAFETY GUARD -->
@@ -1190,6 +1499,17 @@ date_default_timezone_set('Asia/Bangkok');
     </div>
 
     <script>
+        // --- XSS PROTECTION & SANITIZATION UTILITIES ---
+        function escapeHTML(str) {
+            if (typeof str !== 'string') return str;
+            return str
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
         // --- SUPABASE CREDENTIALS CONFIGURATION ---
         const SUPABASE_URL = 'https://eusuehaqgwkcgowsgyco.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_ww-mPdyom_i6S4XhfAFj9Q_vFBpTuaE';
@@ -1197,11 +1517,319 @@ date_default_timezone_set('Asia/Bangkok');
             auth: { persistSession: false }
         });
 
+        // --- AUTHENTICATION & MULTI-USER SYSTEM STATE ---
+        const DEFAULT_USERS = [
+            { id: 1, username: 'admin', password: '123456', name: 'Super Admin (ผู้ดูแลระบบ)', role: 'admin' },
+            { id: 2, username: 'user1', password: '123456', name: 'นายสมชาย (เจ้าหน้าที่คลัง)', role: 'user' }
+        ];
+
+        let systemUsers = [];
+        let currentUser = null;
+        let isAdminAuthenticatedSession = false; // Flag จำสิทธิ์ Admin บังคับรหัสผ่านเข้าส่วนตั้งค่า
+        let loginFailedAttempts = 0;
+        let loginLockoutTimer = null;
+
+        // AUTO LOGOUT TIMER CONFIG (15 MINS INACTIVE AUTO DISCONNECT)
+        const AUTO_LOGOUT_TIMEOUT_MS = 15 * 60 * 1000; // 15 นาที
+        let autoLogoutTimer = null;
+
+        function resetAutoLogoutTimer() {
+            if (!currentUser) return;
+            clearTimeout(autoLogoutTimer);
+            autoLogoutTimer = setTimeout(() => {
+                handleSystemLogout("⏳ คุณไม่ได้ใช้งานเว็บไซต์เป็นเวลานานเกิน 15 นาที ระบบจึงทำการออกจากระบบให้อัตโนมัติเพื่อความปลอดภัย");
+            }, AUTO_LOGOUT_TIMEOUT_MS);
+        }
+
+        function initSecurityListeners() {
+            ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'].forEach(evt => {
+                document.addEventListener(evt, resetAutoLogoutTimer, false);
+            });
+        }
+
+        function initAuthSystem() {
+            const savedUsers = localStorage.getItem('WMS_USERS');
+            if (savedUsers) {
+                try {
+                    systemUsers = JSON.parse(savedUsers);
+                } catch(e) {
+                    systemUsers = [...DEFAULT_USERS];
+                }
+            } else {
+                systemUsers = [...DEFAULT_USERS];
+                localStorage.setItem('WMS_USERS', JSON.stringify(systemUsers));
+            }
+
+            // ใช้ sessionStorage เพื่อบังคับให้ผู้ใช้ต้องใส่รหัสผ่านใหม่ทุกครั้งที่ปิดเว็บแล้วเปิดใหม่
+            const activeSession = sessionStorage.getItem('WMS_ACTIVE_USER');
+            if (activeSession) {
+                try {
+                    currentUser = JSON.parse(activeSession);
+                    document.getElementById('loginOverlay').style.display = 'none';
+                    document.getElementById('currentUserNameText').textContent = escapeHTML(`${currentUser.name} (${currentUser.username})`);
+                    resetAutoLogoutTimer();
+                    initSecurityListeners();
+                } catch(e) {
+                    forceShowLoginOverlay();
+                }
+            } else {
+                forceShowLoginOverlay();
+            }
+        }
+
+        function forceShowLoginOverlay() {
+            currentUser = null;
+            isAdminAuthenticatedSession = false;
+            sessionStorage.removeItem('WMS_ACTIVE_USER');
+            document.getElementById('loginOverlay').style.display = 'flex';
+            document.getElementById('loginUsername').focus();
+        }
+
+        function handleSystemLogin(e) {
+            e.preventDefault();
+            
+            if (loginFailedAttempts >= 5) {
+                document.getElementById('loginErrorMsg').textContent = '⚠️ คุณพิมพ์ผิดเกินจำนวนกำหนด กรุณารอ 30 วินาที!';
+                document.getElementById('loginErrorAlert').style.display = 'block';
+                return;
+            }
+
+            const uInput = document.getElementById('loginUsername').value.trim();
+            const pInput = document.getElementById('loginPassword').value.trim();
+
+            const found = systemUsers.find(u => u.username.toLowerCase() === uInput.toLowerCase() && u.password === pInput);
+
+            if (found) {
+                loginFailedAttempts = 0;
+                currentUser = found;
+                sessionStorage.setItem('WMS_ACTIVE_USER', JSON.stringify(currentUser));
+                
+                document.getElementById('loginOverlay').style.display = 'none';
+                document.getElementById('loginErrorAlert').style.display = 'none';
+                document.getElementById('currentUserNameText').textContent = escapeHTML(`${currentUser.name} (${currentUser.username})`);
+                
+                document.getElementById('loginUsername').value = '';
+                document.getElementById('loginPassword').value = '';
+
+                resetAutoLogoutTimer();
+                initSecurityListeners();
+                showToast(`🎉 ยินดีต้อนรับคุณ ${escapeHTML(currentUser.name)}`);
+            } else {
+                loginFailedAttempts++;
+                playErrorSound();
+                if (loginFailedAttempts >= 5) {
+                    document.getElementById('loginSubmitBtn').disabled = true;
+                    document.getElementById('loginErrorMsg').textContent = '🚨 กรอกรหัสผิด 5 ครั้ง! ปิดการเข้าถึงชั่วคราว 30 วินาที';
+                    document.getElementById('loginErrorAlert').style.display = 'block';
+                    
+                    setTimeout(() => {
+                        loginFailedAttempts = 0;
+                        document.getElementById('loginSubmitBtn').disabled = false;
+                        document.getElementById('loginErrorAlert').style.display = 'none';
+                    }, 30000);
+                } else {
+                    document.getElementById('loginErrorMsg').textContent = `Username หรือ Password ไม่ถูกต้อง! (ลองได้อีก ${5 - loginFailedAttempts} ครั้ง)`;
+                    document.getElementById('loginErrorAlert').style.display = 'block';
+                }
+            }
+        }
+
+        function handleSystemLogout(reasonMsg = null) {
+            if (reasonMsg || confirm("คุณแน่ใจหรือไม่ที่จะออกจากระบบ?")) {
+                sessionStorage.removeItem('WMS_ACTIVE_USER');
+                currentUser = null;
+                isAdminAuthenticatedSession = false;
+                clearTimeout(autoLogoutTimer);
+                if (reasonMsg) alert(reasonMsg);
+                location.reload();
+            }
+        }
+
+        function openChangePasswordModal() {
+            document.getElementById('changePasswordModal').style.display = 'flex';
+        }
+
+        function closeChangePasswordModal() {
+            document.getElementById('changePasswordModal').style.display = 'none';
+            document.getElementById('oldPasswordInput').value = '';
+            document.getElementById('newPasswordInput').value = '';
+            document.getElementById('confirmNewPasswordInput').value = '';
+        }
+
+        function submitChangePassword(e) {
+            e.preventDefault();
+            const oldP = document.getElementById('oldPasswordInput').value;
+            const newP = document.getElementById('newPasswordInput').value;
+            const confirmP = document.getElementById('confirmNewPasswordInput').value;
+
+            if (oldP !== currentUser.password) {
+                alert("❌ รหัสผ่านเดิมไม่ถูกต้อง!");
+                return;
+            }
+
+            if (newP !== confirmP) {
+                alert("❌ รหัสผ่านใหม่ทั้งสองช่องไม่ตรงกัน!");
+                return;
+            }
+
+            const uIdx = systemUsers.findIndex(u => u.username === currentUser.username);
+            if (uIdx !== -1) {
+                systemUsers[uIdx].password = newP;
+                currentUser.password = newP;
+                localStorage.setItem('WMS_USERS', JSON.stringify(systemUsers));
+                sessionStorage.setItem('WMS_ACTIVE_USER', JSON.stringify(currentUser));
+                playSuccessSound();
+                showToast("✅ เปลี่ยนรหัสผ่านสำเร็จเรียบร้อยแล้ว");
+                closeChangePasswordModal();
+            }
+        }
+
+        function renderUserManagementTable() {
+            const tbody = document.getElementById('userManagementTableBody');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+
+            systemUsers.forEach((u, idx) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="text-align:center; font-weight:700;" class="mono">${idx + 1}</td>
+                    <td><strong class="mono" style="color:var(--primary); font-size:0.92rem;">${escapeHTML(u.username)}</strong></td>
+                    <td><span style="font-weight:600;">${escapeHTML(u.name)}</span></td>
+                    <td>
+                        <span class="status-badge" style="font-size:0.75rem; background:${u.role === 'admin' ? 'var(--primary-light)' : 'var(--bg-subtle)'}; color:${u.role === 'admin' ? 'var(--primary)' : 'var(--text-sub)'}; border-color:${u.role === 'admin' ? 'var(--primary-border)' : 'var(--border-color)'};">
+                            ${u.role === 'admin' ? '⚡ Super Admin' : '👤 User General'}
+                        </span>
+                    </td>
+                    <td style="text-align:center;">
+                        <button class="btn btn-sm btn-secondary" onclick="openEditUserModal(${u.id})"><i class="fa-solid fa-key" style="color:var(--primary);"></i> แก้ไขรหัส</button>
+                    </td>
+                    <td style="text-align:center;">
+                        <button class="btn btn-sm btn-danger" ${u.username === 'admin' ? 'disabled' : ''} onclick="deleteUserAccount(${u.id})"><i class="fa-solid fa-trash-can"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function openCreateUserModal() {
+            document.getElementById('userFormId').value = '';
+            document.getElementById('userFormUsername').value = '';
+            document.getElementById('userFormUsername').disabled = false;
+            document.getElementById('userFormFullName').value = '';
+            document.getElementById('userFormPassword').value = '';
+            document.getElementById('userFormRole').value = 'user';
+            document.getElementById('userModalTitle').textContent = 'เพิ่มผู้ใช้งานใหม่';
+            document.getElementById('createUserModal').style.display = 'flex';
+        }
+
+        function openEditUserModal(id) {
+            const u = systemUsers.find(user => user.id === id);
+            if(!u) return;
+
+            document.getElementById('userFormId').value = u.id;
+            document.getElementById('userFormUsername').value = u.username;
+            document.getElementById('userFormUsername').disabled = true;
+            document.getElementById('userFormFullName').value = u.name;
+            document.getElementById('userFormPassword').value = u.password;
+            document.getElementById('userFormRole').value = u.role || 'user';
+            document.getElementById('userModalTitle').textContent = `แก้ไขผู้ใช้งาน: ${u.username}`;
+            document.getElementById('createUserModal').style.display = 'flex';
+        }
+
+        function closeCreateUserModal() {
+            document.getElementById('createUserModal').style.display = 'none';
+        }
+
+        function submitUserForm(e) {
+            e.preventDefault();
+            const id = document.getElementById('userFormId').value;
+            const username = document.getElementById('userFormUsername').value.trim();
+            const fullName = document.getElementById('userFormFullName').value.trim();
+            const password = document.getElementById('userFormPassword').value.trim();
+            const role = document.getElementById('userFormRole').value;
+
+            if (id) {
+                const idx = systemUsers.findIndex(u => String(u.id) === String(id));
+                if (idx !== -1) {
+                    systemUsers[idx].name = fullName;
+                    if(password) systemUsers[idx].password = password;
+                    systemUsers[idx].role = role;
+                }
+            } else {
+                if (systemUsers.some(u => u.username.toLowerCase() === username.toLowerCase())) {
+                    alert("❌ Username นี้มีอยู่ในระบบแล้ว!");
+                    return;
+                }
+                systemUsers.push({
+                    id: Date.now(),
+                    username: username,
+                    password: password || '123456',
+                    name: fullName,
+                    role: role
+                });
+            }
+
+            localStorage.setItem('WMS_USERS', JSON.stringify(systemUsers));
+            playSuccessSound();
+            showToast("✅ บันทึกข้อมูลผู้ใช้เรียบร้อยแล้ว");
+            closeCreateUserModal();
+            renderUserManagementTable();
+        }
+
+        function deleteUserAccount(id) {
+            const u = systemUsers.find(user => user.id === id);
+            if(u && confirm(`แน่ใจหรือไม่ที่จะลบผู้ใช้ ${u.username}?`)) {
+                systemUsers = systemUsers.filter(user => user.id !== id);
+                localStorage.setItem('WMS_USERS', JSON.stringify(systemUsers));
+                renderUserManagementTable();
+                showToast("🗑️ ลบผู้ใช้เรียบร้อยแล้ว");
+            }
+        }
+
+        // --- HARDENED ADMIN GUARD ENGINE (บังคับสิทธิ์ Admin เท่านั้น) ---
+        function closeAdminGuardModal() {
+            document.getElementById('adminGuardModal').style.display = 'none';
+            document.getElementById('adminGuardPasswordInput').value = '';
+            
+            // หากยกเลิก ให้เด้งกลับไปหน้าแรก (View Inventory) เพื่อป้องกันการเข้าถึง
+            if(!isAdminAuthenticatedSession) {
+                executeSwitchView('view-inventory');
+            }
+        }
+
+        function verifyAdminGuardPassword(e) {
+            e.preventDefault();
+            const inputPass = document.getElementById('adminGuardPasswordInput').value;
+
+            // Strict Validation: ตรวจสอบเฉพาะบัญชี Admin ปัจจุบันที่ล็อกอินอยู่
+            if (!currentUser || currentUser.role !== 'admin') {
+                playErrorSound();
+                alert("⛔ ปฏิเสธการเข้าถึง: บัญชีของคุณไม่มีสิทธิ์ผู้ดูแลระบบ (Admin)!");
+                closeAdminGuardModal();
+                return;
+            }
+
+            if (inputPass === currentUser.password) {
+                isAdminAuthenticatedSession = true;
+                document.getElementById('adminGuardModal').style.display = 'none';
+                document.getElementById('adminGuardPasswordInput').value = '';
+                executeSwitchView('view-settings');
+                playSuccessSound();
+                showToast("🔓 ยืนยันสิทธิ์ผู้ดูแลระบบสำเร็จ เข้าสู่หน้าตั้งค่าพิกัดคลังสินค้า");
+            } else {
+                playErrorSound();
+                alert("❌ รหัสผ่านผู้ดูแลระบบไม่ถูกต้อง! กรุณาลองใหม่อีกครั้ง");
+                document.getElementById('adminGuardPasswordInput').value = '';
+                document.getElementById('adminGuardPasswordInput').focus();
+            }
+        }
+
         let globalInventoryData = [];
         let globalMasterProducts = [];
         let recentInboundList = [];
         let recentOutboundOrders = [];
         let outboundCartItems = [];
+        let occupiedLocationsSet = new Set();
         
         let pendingDeleteMode = null;
         let pendingDeleteSn = null;
@@ -1360,7 +1988,6 @@ date_default_timezone_set('Asia/Bangkok');
                     successCount++;
                     uploadedSns.push(itemData.sn);
 
-                    // อัปเดตสถานะในรายการ recentInboundList ให้เปลี่ยนเป็นสีเขียว / DB Online ทันที
                     const foundFeed = recentInboundList.find(f => f.sn === itemData.sn);
                     if (foundFeed) {
                         foundFeed.isOffline = false;
@@ -1416,6 +2043,7 @@ date_default_timezone_set('Asia/Bangkok');
         }
 
         document.addEventListener('DOMContentLoaded', async () => {
+            initAuthSystem();
             initOfflineDatabase();
             renderSidebarMenu();
             await loadWarehouseConfigsFromDB();
@@ -1425,7 +2053,6 @@ date_default_timezone_set('Asia/Bangkok');
             onInboundAisleOrBayChange();
             updateOnlineStatusUI(navigator.onLine);
 
-            // Setup Outbound Enter Key Interceptor Listener to fix scanning/typing issue
             const outboundSnInput = document.getElementById('outboundSn');
             if (outboundSnInput) {
                 outboundSnInput.addEventListener('keydown', function(e) {
@@ -1445,8 +2072,8 @@ date_default_timezone_set('Asia/Bangkok');
                 const li = document.createElement('li');
                 li.className = 'menu-item';
                 li.innerHTML = `
-                    <button class="${idx === 0 ? 'active' : ''}" onclick="switchView('${item.id}')">
-                        <i class="fa-solid ${item.icon}"></i> ${item.label}
+                    <button class="${idx === 0 ? 'active' : ''}" onclick="switchView('${escapeHTML(item.id)}')">
+                        <i class="fa-solid ${escapeHTML(item.icon)}"></i> ${escapeHTML(item.label)}
                     </button>
                 `;
                 list.appendChild(li);
@@ -1454,6 +2081,26 @@ date_default_timezone_set('Asia/Bangkok');
         }
 
         function switchView(viewId) {
+            // STRICT SECURITY GUARD: ป้องกันผู้ใช้ทั่วไป และบังคับใส่รหัส Admin
+            if (viewId === 'view-settings') {
+                if (!currentUser || currentUser.role !== 'admin') {
+                    playErrorSound();
+                    alert("⛔ ปฏิเสธการเข้าถึง: หน้านี้สงวนสิทธิ์ไว้สำหรับผู้ดูแลระบบ (Admin) เท่านั้น!");
+                    return;
+                }
+
+                if (!isAdminAuthenticatedSession) {
+                    document.getElementById('adminGuardAccountName').textContent = escapeHTML(`${currentUser.name} (${currentUser.username})`);
+                    document.getElementById('adminGuardModal').style.display = 'flex';
+                    document.getElementById('adminGuardPasswordInput').value = '';
+                    document.getElementById('adminGuardPasswordInput').focus();
+                    return;
+                }
+            }
+            executeSwitchView(viewId);
+        }
+
+        function executeSwitchView(viewId) {
             document.querySelectorAll('.menu-item button').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
 
@@ -1464,7 +2111,7 @@ date_default_timezone_set('Asia/Bangkok');
 
             const itemConfig = menuConfig.find(m => m.id === viewId);
             if(itemConfig) {
-                document.getElementById('navTitleText').innerHTML = `<i class="fa-solid ${itemConfig.icon}" style="color:var(--primary);"></i> ${itemConfig.label}`;
+                document.getElementById('navTitleText').innerHTML = `<i class="fa-solid ${escapeHTML(itemConfig.icon)}" style="color:var(--primary);"></i> ${escapeHTML(itemConfig.label)}`;
             }
 
             if(viewId === 'view-locations') {
@@ -1473,6 +2120,7 @@ date_default_timezone_set('Asia/Bangkok');
                 renderDrillDownSlotsGrid();
             } else if(viewId === 'view-settings') {
                 renderAisleSettingsTable();
+                renderUserManagementTable();
                 renderMenuReorderTable();
             }
         }
@@ -1681,7 +2329,14 @@ date_default_timezone_set('Asia/Bangkok');
             }
         }
 
-        // --- SMART GAP FINDER & AUTO ADVANCE LOCK/BAY/AISLE ENGINE ---
+        // --- ULTRA FAST IN-MEMORY GAP FINDER & AUTO ADVANCE ENGINE ---
+        function rebuildOccupiedSet() {
+            occupiedLocationsSet.clear();
+            globalInventoryData.forEach(item => {
+                if(item.location) occupiedLocationsSet.add(item.location.toUpperCase());
+            });
+        }
+
         function autoSelectAvailableSlot() {
             const aisleSelect = document.getElementById('inboundAisleSelect');
             let currentAisle = aisleSelect.value;
@@ -1691,7 +2346,6 @@ date_default_timezone_set('Asia/Bangkok');
                 return;
             }
 
-            const occupiedLocations = new Set(globalInventoryData.map(i => (i.location || '').toUpperCase()));
             let startAisleIdx = masterAisles.indexOf(currentAisle);
             if(startAisleIdx === -1) startAisleIdx = 0;
 
@@ -1712,7 +2366,7 @@ date_default_timezone_set('Asia/Bangkok');
                             const slotStr = `S${st}`;
                             const targetLoc = `${targetAisle}-${bayStr}-${shelfStr}-${slotStr}`.toUpperCase();
 
-                            if (!occupiedLocations.has(targetLoc)) {
+                            if (!occupiedLocationsSet.has(targetLoc)) {
                                 foundLocation = {
                                     aisle: targetAisle,
                                     bay: bayStr,
@@ -1824,6 +2478,7 @@ date_default_timezone_set('Asia/Bangkok');
                     statusText.textContent = `⚠️ ออฟไลน์โหมด (สต็อก: ${globalInventoryData.length.toLocaleString()})`;
                 }
 
+                rebuildOccupiedSet();
                 filterInventoryData();
                 updateKPIs();
                 refreshLocationVisualizerIfActive();
@@ -1884,28 +2539,28 @@ date_default_timezone_set('Asia/Bangkok');
                 const formatLoc = formatLocationCode(item.location);
                 
                 const tr = document.createElement('tr');
-                tr.setAttribute('id', `inventory-row-${item.sn}`);
+                tr.setAttribute('id', `inventory-row-${escapeHTML(item.sn)}`);
                 tr.innerHTML = `
-                    <td style="text-align:center;"><input type="checkbox" class="item-checkbox" data-sn="${item.sn}" ${isChecked ? 'checked' : ''} onchange="toggleItemSelection('${item.sn}', this.checked)"></td>
+                    <td style="text-align:center;"><input type="checkbox" class="item-checkbox" data-sn="${escapeHTML(item.sn)}" ${isChecked ? 'checked' : ''} onchange="toggleItemSelection('${escapeHTML(item.sn)}', this.checked)"></td>
                     <td style="text-align:center; font-weight:700;" class="mono">${index + 1}</td>
-                    <td><code class="mono" style="color:var(--primary); font-weight:700;">${item.category || 'N/A'}</code></td>
-                    <td style="font-weight:600;">${item.name || '-'}</td>
-                    <td><code class="mono" style="font-weight:700;">${item.sn}</code></td>
-                    <td><span class="badge-location mono"><i class="fa-solid fa-location-dot"></i> ${formatLoc}</span></td>
+                    <td><code class="mono" style="color:var(--primary); font-weight:700;">${escapeHTML(item.category || 'N/A')}</code></td>
+                    <td style="font-weight:600;">${escapeHTML(item.name || '-')}</td>
+                    <td><code class="mono" style="font-weight:700;">${escapeHTML(item.sn)}</code></td>
+                    <td><span class="badge-location mono"><i class="fa-solid fa-location-dot"></i> ${escapeHTML(formatLoc)}</span></td>
                     <td style="text-align:center; font-weight:700;" class="mono">${item.qty ?? 1}</td>
                     <td style="font-size:0.78rem; color:var(--text-muted);">${item.created_at ? new Date(item.created_at).toLocaleString('th-TH') : '-'}</td>
                     <td style="text-align:center;">
-                        <button class="btn btn-sm btn-primary" onclick="openPrintBarcodeModal('SINGLE', '${item.sn}')">
+                        <button class="btn btn-sm btn-primary" onclick="openPrintBarcodeModal('SINGLE', '${escapeHTML(item.sn)}')">
                             <i class="fa-solid fa-barcode"></i> พิมพ์
                         </button>
                     </td>
                     <td style="text-align:center;">
-                        <button class="btn btn-sm btn-secondary" onclick="openRelocateModal('${item.id}', '${item.sn}', '${item.name}', '${item.location}')">
+                        <button class="btn btn-sm btn-secondary" onclick="openRelocateModal('${item.id}', '${escapeHTML(item.sn)}', '${escapeHTML(item.name)}', '${escapeHTML(item.location)}')">
                             <i class="fa-solid fa-right-left"></i> ย้าย
                         </button>
                     </td>
                     <td style="text-align:center;">
-                        <button class="btn btn-sm btn-danger" onclick="openDeleteConfirmModal('SINGLE', '${item.sn}', '${item.id}')">
+                        <button class="btn btn-sm btn-danger" onclick="openDeleteConfirmModal('SINGLE', '${escapeHTML(item.sn)}', '${item.id}')">
                             <i class="fa-solid fa-trash"></i> ลบ
                         </button>
                     </td>
@@ -2031,14 +2686,14 @@ date_default_timezone_set('Asia/Bangkok');
             const detailsBox = document.getElementById('deleteConfirmModalDetails');
 
             if (mode === 'SINGLE') {
-                detailsBox.innerHTML = `<div>• S/N: <strong>${sn}</strong></div>`;
+                detailsBox.innerHTML = `<div>• S/N: <strong>${escapeHTML(sn)}</strong></div>`;
             } else if (mode === 'BATCH') {
                 if (selectedItemSnSet.size === 0) {
                     alert("⚠️ กรุณาเลือกรายการที่ต้องการลบอย่างน้อย 1 รายการ");
                     return;
                 }
                 const targetSns = Array.from(selectedItemSnSet);
-                let listHtml = targetSns.slice(0, 5).map(s => `<div>• S/N: ${s}</div>`).join('');
+                let listHtml = targetSns.slice(0, 5).map(s => `<div>• S/N: ${escapeHTML(s)}</div>`).join('');
                 if (targetSns.length > 5) {
                     listHtml += `<div style="color:var(--text-muted); font-size:0.8rem;">...และอีก ${targetSns.length - 5} รายการ</div>`;
                 }
@@ -2058,6 +2713,7 @@ date_default_timezone_set('Asia/Bangkok');
                 const id = pendingDeleteId;
 
                 globalInventoryData = globalInventoryData.filter(i => i.sn !== sn);
+                rebuildOccupiedSet();
                 playSuccessSound();
                 showToast(`🗑️ ลบ S/N: ${sn} เรียบร้อยแล้ว`);
 
@@ -2076,6 +2732,7 @@ date_default_timezone_set('Asia/Bangkok');
                 globalInventoryData = globalInventoryData.filter(i => !selectedItemSnSet.has(i.sn));
                 selectedItemSnSet.clear();
 
+                rebuildOccupiedSet();
                 filterInventoryData();
                 updateKPIs();
                 refreshLocationVisualizerIfActive();
@@ -2142,8 +2799,8 @@ date_default_timezone_set('Asia/Bangkok');
             for(let [code, name] of matchesMap.entries()) {
                 if(count >= 8) break;
                 html += `
-                    <div class="suggestion-item" onclick="selectSuggestedSku('${code}', '${name}')">
-                        <div><span class="mono" style="color:var(--primary); font-weight:700;">[${code}]</span> ${name}</div>
+                    <div class="suggestion-item" onclick="selectSuggestedSku('${escapeHTML(code)}', '${escapeHTML(name)}')">
+                        <div><span class="mono" style="color:var(--primary); font-weight:700;">[${escapeHTML(code)}]</span> ${escapeHTML(name)}</div>
                         <i class="fa-solid fa-arrow-turn-down" style="font-size:0.75rem; color:var(--text-muted);"></i>
                     </div>
                 `;
@@ -2188,7 +2845,7 @@ date_default_timezone_set('Asia/Bangkok');
             document.getElementById('bayInboundCountBadge').textContent = `รับแล้วในช่องนี้: ${currentSlotCount} เครื่อง`;
         }
 
-        // --- FAST INBOUND ENGINE ---
+        // --- FAST INBOUND ENGINE WITH INSTANT SLOT LOCKING ---
         async function handleInboundSubmit(e) {
             e.preventDefault();
 
@@ -2205,6 +2862,10 @@ date_default_timezone_set('Asia/Bangkok');
                 showToast(`🚨 S/N "${sn}" มีอยู่ในระบบสต็อกแล้ว!`, true);
                 snInput.select();
                 return;
+            }
+
+            if(location !== 'DOCK') {
+                occupiedLocationsSet.add(location.toUpperCase());
             }
 
             const nowStr = new Date().toISOString();
@@ -2254,6 +2915,7 @@ date_default_timezone_set('Asia/Bangkok');
                         playErrorSound();
                         showToast('❌ ไม่สามารถบันทึกข้อมูลเข้า DB ได้', true);
                         globalInventoryData = globalInventoryData.filter(i => i.sn !== sn);
+                        rebuildOccupiedSet();
                         filterInventoryData();
                         refreshLocationVisualizerIfActive();
                     } else {
@@ -2285,15 +2947,15 @@ date_default_timezone_set('Asia/Bangkok');
                 html += `
                     <div class="feed-item ${cardClass}">
                         <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <span class="mono" style="font-weight:700; color:var(--text-main);">${item.sn}</span>
-                            <span class="badge-location mono">📍 ${formatLocationCode(item.location)}</span>
+                            <span class="mono" style="font-weight:700; color:var(--text-main);">${escapeHTML(item.sn)}</span>
+                            <span class="badge-location mono">📍 ${escapeHTML(formatLocationCode(item.location))}</span>
                         </div>
                         <div style="font-size:0.8rem; color:var(--text-sub); font-weight:500;">
-                            [${item.category}] ${item.name}
+                            [${escapeHTML(item.category)}] ${escapeHTML(item.name)}
                         </div>
                         <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.72rem; color:var(--text-muted); margin-top:2px;">
                             <span>${item.isOffline ? '⚠️ ค้างอัปโหลด (Offline)' : '⚡ DB Online (อัปโหลดสำเร็จ)'}</span>
-                            <span>🕒 ${item.time} น.</span>
+                            <span>🕒 ${escapeHTML(item.time)} น.</span>
                         </div>
                     </div>
                 `;
@@ -2355,12 +3017,12 @@ date_default_timezone_set('Asia/Bangkok');
                 html += `
                     <tr>
                         <td style="font-weight:700;" class="mono">${idx + 1}</td>
-                        <td><code class="mono">${item.category}</code></td>
-                        <td>${item.name}</td>
-                        <td class="mono font-bold">${item.sn}</td>
-                        <td><span class="badge-location mono">📍 ${formatLocationCode(item.location)}</span></td>
+                        <td><code class="mono">${escapeHTML(item.category)}</code></td>
+                        <td>${escapeHTML(item.name)}</td>
+                        <td class="mono font-bold">${escapeHTML(item.sn)}</td>
+                        <td><span class="badge-location mono">📍 ${escapeHTML(formatLocationCode(item.location))}</span></td>
                         <td style="text-align:center;">
-                            <button class="btn btn-sm btn-danger" style="padding:2px 6px;" onclick="removeOutboundFromCart('${item.sn}')">&times;</button>
+                            <button class="btn btn-sm btn-danger" style="padding:2px 6px;" onclick="removeOutboundFromCart('${escapeHTML(item.sn)}')">&times;</button>
                         </td>
                     </tr>
                 `;
@@ -2401,6 +3063,7 @@ date_default_timezone_set('Asia/Bangkok');
             globalInventoryData = globalInventoryData.filter(i => !removedSns.includes(i.sn));
             recentOutboundOrders.unshift(orderData);
 
+            rebuildOccupiedSet();
             filterInventoryData();
             updateKPIs();
             refreshLocationVisualizerIfActive();
@@ -2428,15 +3091,15 @@ date_default_timezone_set('Asia/Bangkok');
                 html += `
                     <div class="feed-item outbound">
                         <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <strong class="mono" style="color:var(--warning); font-size:0.92rem;">📄 เลขที่: ${ord.orderNo}</strong>
-                            <button class="btn btn-sm btn-secondary" onclick="printOutboundWorkOrderDoc('${ord.orderNo}')"><i class="fa-solid fa-print"></i> พิมพ์ใบสั่งจ่าย</button>
+                            <strong class="mono" style="color:var(--warning); font-size:0.92rem;">📄 เลขที่: ${escapeHTML(ord.orderNo)}</strong>
+                            <button class="btn btn-sm btn-secondary" onclick="printOutboundWorkOrderDoc('${escapeHTML(ord.orderNo)}')"><i class="fa-solid fa-print"></i> พิมพ์ใบสั่งจ่าย</button>
                         </div>
                         <div style="font-size:0.8rem; color:var(--text-sub); margin-top:2px;">
-                            <strong>ปลายทาง:</strong> ${ord.destination} | <strong>รวม:</strong> ${ord.items.length} เครื่อง
+                            <strong>ปลายทาง:</strong> ${escapeHTML(ord.destination)} | <strong>รวม:</strong> ${ord.items.length} เครื่อง
                         </div>
                         <div style="font-size:0.75rem; color:var(--text-muted); display:flex; justify-content:space-between; margin-top:4px;">
-                            <span>ผู้ส่ง: ${ord.dispatcher} | ผู้รับ: ${ord.receiver}</span>
-                            <span>🕒 ${ord.time}</span>
+                            <span>ผู้ส่ง: ${escapeHTML(ord.dispatcher)} | ผู้รับ: ${escapeHTML(ord.receiver)}</span>
+                            <span>🕒 ${escapeHTML(ord.time)}</span>
                         </div>
                     </div>
                 `;
@@ -2457,10 +3120,10 @@ date_default_timezone_set('Asia/Bangkok');
             let rowsHtml = ord.items.map((it, idx) => `
                 <tr>
                     <td style="text-align:center; padding:8px; border:1px solid #ddd;">${idx + 1}</td>
-                    <td style="padding:8px; border:1px solid #ddd;" class="mono">${it.category || '-'}</td>
-                    <td style="padding:8px; border:1px solid #ddd;">${it.name || '-'}</td>
-                    <td style="padding:8px; border:1px solid #ddd;" class="mono"><strong>${it.sn}</strong></td>
-                    <td style="text-align:center; padding:8px; border:1px solid #ddd;" class="mono">${formatLocationCode(it.location)}</td>
+                    <td style="padding:8px; border:1px solid #ddd;" class="mono">${escapeHTML(it.category || '-')}</td>
+                    <td style="padding:8px; border:1px solid #ddd;">${escapeHTML(it.name || '-')}</td>
+                    <td style="padding:8px; border:1px solid #ddd;" class="mono"><strong>${escapeHTML(it.sn)}</strong></td>
+                    <td style="text-align:center; padding:8px; border:1px solid #ddd;" class="mono">${escapeHTML(formatLocationCode(it.location))}</td>
                 </tr>
             `).join('');
 
@@ -2468,7 +3131,7 @@ date_default_timezone_set('Asia/Bangkok');
                 <!DOCTYPE html>
                 <html>
                 <head>
-                    <title>ใบงานจ่ายสินค้าออกจากคลัง - ${ord.orderNo}</title>
+                    <title>ใบงานจ่ายสินค้าออกจากคลัง - ${escapeHTML(ord.orderNo)}</title>
                     <style>
                         @import url('https://fonts.googleapis.com/css2?family=Prompt:wght@400;600;700&family=JetBrains+Mono:wght@500;700&display=swap');
                         body { font-family: 'Prompt', sans-serif; padding: 25px; color: #000; }
@@ -2488,15 +3151,15 @@ date_default_timezone_set('Asia/Bangkok');
                             <div style="font-size:13px; color:#555;">WMS Enterprise Suite v2026</div>
                         </div>
                         <div style="text-align:right;">
-                            <div class="mono" style="font-size:18px; font-weight:bold;">${ord.orderNo}</div>
-                            <div style="font-size:12px;">วันที่: ${ord.time}</div>
+                            <div class="mono" style="font-size:18px; font-weight:bold;">${escapeHTML(ord.orderNo)}</div>
+                            <div style="font-size:12px;">วันที่: ${escapeHTML(ord.time)}</div>
                         </div>
                     </div>
 
                     <div class="info-grid">
-                        <div><strong>สถานที่จ่ายไป / ปลายทาง:</strong> ${ord.destination}</div>
-                        <div><strong>ผู้ทำการเบิกจ่าย:</strong> ${ord.dispatcher}</div>
-                        <div><strong>ผู้รับสินค้า / ขนส่ง:</strong> ${ord.receiver}</div>
+                        <div><strong>สถานที่จ่ายไป / ปลายทาง:</strong> ${escapeHTML(ord.destination)}</div>
+                        <div><strong>ผู้ทำการเบิกจ่าย:</strong> ${escapeHTML(ord.dispatcher)}</div>
+                        <div><strong>ผู้รับสินค้า / ขนส่ง:</strong> ${escapeHTML(ord.receiver)}</div>
                         <div><strong>จำนวนสินค้ารวม:</strong> ${ord.items.length} เครื่อง</div>
                     </div>
 
@@ -2517,12 +3180,12 @@ date_default_timezone_set('Asia/Bangkok');
                         <div>
                             <div class="sig-line"></div>
                             <div>ลงชื่อ.......................................................... (ผู้ส่ง/เจ้าหน้าที่คลัง)</div>
-                            <div style="margin-top:4px; font-size:12px; color:#666;">(${ord.dispatcher})</div>
+                            <div style="margin-top:4px; font-size:12px; color:#666;">(${escapeHTML(ord.dispatcher)})</div>
                         </div>
                         <div>
                             <div class="sig-line"></div>
                             <div>ลงชื่อ.......................................................... (ผู้รับสินค้า/ขนส่ง)</div>
-                            <div style="margin-top:4px; font-size:12px; color:#666;">(${ord.receiver})</div>
+                            <div style="margin-top:4px; font-size:12px; color:#666;">(${escapeHTML(ord.receiver)})</div>
                         </div>
                     </div>
 
@@ -2552,7 +3215,7 @@ date_default_timezone_set('Asia/Bangkok');
 
                 const btn = document.createElement('button');
                 btn.className = `aisle-tab-btn ${currentSelectedAisle === aisle ? 'active' : ''}`;
-                btn.innerHTML = `<i class="fa-solid fa-layer-group"></i> ${aisle === 'DOCK' ? 'ลาน DOCK' : `แถว ${aisle}`} <span class="mono" style="font-size:0.75rem; opacity:0.8;">(${count})</span>`;
+                btn.innerHTML = `<i class="fa-solid fa-layer-group"></i> ${aisle === 'DOCK' ? 'ลาน DOCK' : `แถว ${escapeHTML(aisle)}`} <span class="mono" style="font-size:0.75rem; opacity:0.8;">(${count})</span>`;
                 btn.onclick = () => {
                     currentSelectedAisle = aisle;
                     renderDrillDownAisleBar();
@@ -2650,20 +3313,20 @@ date_default_timezone_set('Asia/Bangkok');
             let rowsHtml = items.map(item => `
                 <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-subtle); padding:6px 10px; border-radius:6px; margin-bottom:6px; border:1px solid var(--border-color);">
                     <div style="display:flex; gap:10px; align-items:center; overflow:hidden;">
-                        <span class="mono" style="font-weight:700; color:var(--primary); font-size:0.85rem;">${item.sn}</span>
-                        <span style="font-size:0.8rem; color:var(--text-sub); font-weight:600; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">[${item.category}] ${item.name || ''}</span>
+                        <span class="mono" style="font-weight:700; color:var(--primary); font-size:0.85rem;">${escapeHTML(item.sn)}</span>
+                        <span style="font-size:0.8rem; color:var(--text-sub); font-weight:600; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">[${escapeHTML(item.category)}] ${escapeHTML(item.name || '')}</span>
                     </div>
                     <div style="display:flex; gap:4px; flex-shrink:0;">
-                        <button class="btn btn-sm btn-primary" style="padding:2px 8px;" onclick="openPrintBarcodeModal('SINGLE', '${item.sn}')" title="พิมพ์สติ๊กเกอร์ S/N"><i class="fa-solid fa-print"></i> พิมพ์</button>
-                        <button class="btn btn-sm btn-secondary" style="padding:2px 8px;" onclick="openRelocateModal('${item.id}', '${item.sn}', '${item.name}', '${item.location}')" title="ย้าย"><i class="fa-solid fa-right-left"></i></button>
-                        <button class="btn btn-sm btn-danger" style="padding:2px 8px;" onclick="openDeleteConfirmModal('SINGLE', '${item.sn}', '${item.id}')" title="ลบออก"><i class="fa-solid fa-trash"></i></button>
+                        <button class="btn btn-sm btn-primary" style="padding:2px 8px;" onclick="openPrintBarcodeModal('SINGLE', '${escapeHTML(item.sn)}')" title="พิมพ์สติ๊กเกอร์ S/N"><i class="fa-solid fa-print"></i> พิมพ์</button>
+                        <button class="btn btn-sm btn-secondary" style="padding:2px 8px;" onclick="openRelocateModal('${item.id}', '${escapeHTML(item.sn)}', '${escapeHTML(item.name)}', '${escapeHTML(item.location)}')" title="ย้าย"><i class="fa-solid fa-right-left"></i></button>
+                        <button class="btn btn-sm btn-danger" style="padding:2px 8px;" onclick="openDeleteConfirmModal('SINGLE', '${escapeHTML(item.sn)}', '${item.id}')" title="ลบออก"><i class="fa-solid fa-trash"></i></button>
                     </div>
                 </div>
             `).join('');
 
             card.innerHTML = `
                 <div class="slot-card-header">
-                    <strong class="mono" style="font-size:0.92rem; color:var(--text-main);">📍 ${formatLocationCode(slotTitle)}</strong>
+                    <strong class="mono" style="font-size:0.92rem; color:var(--text-main);">📍 ${escapeHTML(formatLocationCode(slotTitle))}</strong>
                     <span class="mono" style="font-size:0.78rem; font-weight:700; color:var(--success); background:rgba(0,0,0,0.04); padding:2px 8px; border-radius:4px;">
                         ${items.length} เครื่อง
                     </span>
@@ -2709,10 +3372,10 @@ date_default_timezone_set('Asia/Bangkok');
                 selectedItems.forEach(item => {
                     a4Html += `
                         <div class="barcode-card-box" style="height:62mm;">
-                            <div style="font-size:11px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#000;">${item.name || ''}</div>
-                            <div style="font-size:10px; color:#334155;" class="mono">SKU: ${item.category || '-'}</div>
-                            <div class="barcode-svg-container"><svg id="barcode-svg-${item.sn}"></svg></div>
-                            <div style="font-size:10px; font-weight:700; color:#000;" class="mono">LOCATION: ${formatLocationCode(item.location)}</div>
+                            <div style="font-size:11px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#000;">${escapeHTML(item.name || '')}</div>
+                            <div style="font-size:10px; color:#334155;" class="mono">SKU: ${escapeHTML(item.category || '-')}</div>
+                            <div class="barcode-svg-container"><svg id="barcode-svg-${escapeHTML(item.sn)}"></svg></div>
+                            <div style="font-size:10px; font-weight:700; color:#000;" class="mono">LOCATION: ${escapeHTML(formatLocationCode(item.location))}</div>
                         </div>
                     `;
                 });
@@ -2724,37 +3387,37 @@ date_default_timezone_set('Asia/Bangkok');
                     if(format === '40x30') {
                         html += `
                             <div class="barcode-card-box thermal-card-40x30">
-                                <div style="font-size:0.65rem; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#000;">${item.name || ''}</div>
-                                <div style="font-size:0.58rem; color:#334155;" class="mono">SKU: ${item.category || '-'}</div>
-                                <div class="barcode-svg-container"><svg id="barcode-svg-${item.sn}"></svg></div>
-                                <div style="font-size:0.62rem; font-weight:700; color:#000;" class="mono">LOC: ${formatLocationCode(item.location)}</div>
+                                <div style="font-size:0.65rem; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#000;">${escapeHTML(item.name || '')}</div>
+                                <div style="font-size:0.58rem; color:#334155;" class="mono">SKU: ${escapeHTML(item.category || '-')}</div>
+                                <div class="barcode-svg-container"><svg id="barcode-svg-${escapeHTML(item.sn)}"></svg></div>
+                                <div style="font-size:0.62rem; font-weight:700; color:#000;" class="mono">LOC: ${escapeHTML(formatLocationCode(item.location))}</div>
                             </div>
                         `;
                     } else if(format === '100x75') {
                         html += `
                             <div class="barcode-card-box thermal-card-100x75">
-                                <div style="font-size:0.95rem; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#000;">${item.name || ''}</div>
-                                <div style="font-size:0.8rem; color:#334155;" class="mono">SKU: ${item.category || '-'}</div>
-                                <div class="barcode-svg-container" style="max-height:110px;"><svg id="barcode-svg-${item.sn}"></svg></div>
-                                <div style="font-size:0.85rem; font-weight:700; color:#000;" class="mono">LOCATION: ${formatLocationCode(item.location)}</div>
+                                <div style="font-size:0.95rem; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#000;">${escapeHTML(item.name || '')}</div>
+                                <div style="font-size:0.8rem; color:#334155;" class="mono">SKU: ${escapeHTML(item.category || '-')}</div>
+                                <div class="barcode-svg-container" style="max-height:110px;"><svg id="barcode-svg-${escapeHTML(item.sn)}"></svg></div>
+                                <div style="font-size:0.85rem; font-weight:700; color:#000;" class="mono">LOCATION: ${escapeHTML(formatLocationCode(item.location))}</div>
                             </div>
                         `;
                     } else if(format === '100x150') {
                         html += `
                             <div class="barcode-card-box thermal-card-100x150">
-                                <div style="font-size:1.25rem; font-weight:800; color:#000; padding:10px 0; border-bottom:1px dashed #cbd5e1;">${item.name || ''}</div>
-                                <div style="font-size:1rem; color:#334155; margin-top:8px;" class="mono">SKU / ITEM: ${item.category || '-'}</div>
-                                <div class="barcode-svg-container" style="margin:20px 0;"><svg id="barcode-svg-${item.sn}"></svg></div>
-                                <div style="font-size:1.15rem; font-weight:800; color:#000; background:#f1f5f9; padding:8px; border-radius:6px;" class="mono">LOCATION: ${formatLocationCode(item.location)}</div>
+                                <div style="font-size:1.25rem; font-weight:800; color:#000; padding:10px 0; border-bottom:1px dashed #cbd5e1;">${escapeHTML(item.name || '')}</div>
+                                <div style="font-size:1rem; color:#334155; margin-top:8px;" class="mono">SKU / ITEM: ${escapeHTML(item.category || '-')}</div>
+                                <div class="barcode-svg-container" style="margin:20px 0;"><svg id="barcode-svg-${escapeHTML(item.sn)}"></svg></div>
+                                <div style="font-size:1.15rem; font-weight:800; color:#000; background:#f1f5f9; padding:8px; border-radius:6px;" class="mono">LOCATION: ${escapeHTML(formatLocationCode(item.location))}</div>
                             </div>
                         `;
                     } else {
                         html += `
                             <div class="barcode-card-box thermal-card-50x30">
-                                <div style="font-size:0.72rem; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#000;">${item.name || ''}</div>
-                                <div style="font-size:0.65rem; color:#334155;" class="mono">SKU: ${item.category || '-'}</div>
-                                <div class="barcode-svg-container"><svg id="barcode-svg-${item.sn}"></svg></div>
-                                <div style="font-size:0.68rem; font-weight:700; color:#000;" class="mono">LOC: ${formatLocationCode(item.location)}</div>
+                                <div style="font-size:0.72rem; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#000;">${escapeHTML(item.name || '')}</div>
+                                <div style="font-size:0.65rem; color:#334155;" class="mono">SKU: ${escapeHTML(item.category || '-')}</div>
+                                <div class="barcode-svg-container"><svg id="barcode-svg-${escapeHTML(item.sn)}"></svg></div>
+                                <div style="font-size:0.68rem; font-weight:700; color:#000;" class="mono">LOC: ${escapeHTML(formatLocationCode(item.location))}</div>
                             </div>
                         `;
                     }
@@ -2767,15 +3430,15 @@ date_default_timezone_set('Asia/Bangkok');
                 const dynamicWidth = snLen > 20 ? 0.8 : (snLen > 14 ? 1.0 : 1.2);
 
                 if(format === 'A4') {
-                    JsBarcode(`#barcode-svg-${item.sn}`, item.sn, { format: "CODE128", width: 1.4, height: 42, displayValue: true, fontSize: 11, margin: 2 });
+                    JsBarcode(`#barcode-svg-${CSS.escape(item.sn)}`, item.sn, { format: "CODE128", width: 1.4, height: 42, displayValue: true, fontSize: 11, margin: 2 });
                 } else if(format === '100x150') {
-                    JsBarcode(`#barcode-svg-${item.sn}`, item.sn, { format: "CODE128", width: 2.2, height: 110, displayValue: true, fontSize: 16, margin: 5 });
+                    JsBarcode(`#barcode-svg-${CSS.escape(item.sn)}`, item.sn, { format: "CODE128", width: 2.2, height: 110, displayValue: true, fontSize: 16, margin: 5 });
                 } else if(format === '100x75') {
-                    JsBarcode(`#barcode-svg-${item.sn}`, item.sn, { format: "CODE128", width: 1.8, height: 60, displayValue: true, fontSize: 12, margin: 4 });
+                    JsBarcode(`#barcode-svg-${CSS.escape(item.sn)}`, item.sn, { format: "CODE128", width: 1.8, height: 60, displayValue: true, fontSize: 12, margin: 4 });
                 } else if(format === '40x30') {
-                    JsBarcode(`#barcode-svg-${item.sn}`, item.sn, { format: "CODE128", width: dynamicWidth, height: 28, displayValue: true, fontSize: 9, margin: 1 });
+                    JsBarcode(`#barcode-svg-${CSS.escape(item.sn)}`, item.sn, { format: "CODE128", width: dynamicWidth, height: 28, displayValue: true, fontSize: 9, margin: 1 });
                 } else {
-                    JsBarcode(`#barcode-svg-${item.sn}`, item.sn, { format: "CODE128", width: dynamicWidth, height: 32, displayValue: true, fontSize: 9, margin: 2 });
+                    JsBarcode(`#barcode-svg-${CSS.escape(item.sn)}`, item.sn, { format: "CODE128", width: dynamicWidth, height: 32, displayValue: true, fontSize: 9, margin: 2 });
                 }
             });
         }
@@ -2907,10 +3570,10 @@ date_default_timezone_set('Asia/Bangkok');
                     chunk.forEach(item => {
                         bodyContent += `
                             <div class="barcode-card-box">
-                                <div style="font-size:11px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${item.name || ''}</div>
-                                <div style="font-size:10px;" class="mono">SKU: ${item.category || '-'}</div>
-                                <div class="barcode-svg-container"><svg id="pw-svg-${item.sn}"></svg></div>
-                                <div style="font-size:10px; font-weight:700;" class="mono">LOCATION: ${formatLocationCode(item.location)}</div>
+                                <div style="font-size:11px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHTML(item.name || '')}</div>
+                                <div style="font-size:10px;" class="mono">SKU: ${escapeHTML(item.category || '-')}</div>
+                                <div class="barcode-svg-container"><svg id="pw-svg-${escapeHTML(item.sn)}"></svg></div>
+                                <div style="font-size:10px; font-weight:700;" class="mono">LOCATION: ${escapeHTML(formatLocationCode(item.location))}</div>
                             </div>
                         `;
                     });
@@ -2921,10 +3584,10 @@ date_default_timezone_set('Asia/Bangkok');
                     bodyContent += `
                         <div class="thermal-single-page">
                             <div class="barcode-card-box" style="height:100%; border:2px solid #000; padding:6px; display:flex; flex-direction:column; justify-content:space-between;">
-                                <div style="font-size:${format === '100x150' ? '18px' : (format === '100x75' ? '14px' : '9px')}; font-weight:700;">${item.name || ''}</div>
-                                <div style="font-size:${format === '100x150' ? '14px' : (format === '100x75' ? '12px' : '8px')}; color:#334155;" class="mono">SKU: ${item.category || '-'}</div>
-                                <div class="barcode-svg-container"><svg id="pw-svg-${item.sn}"></svg></div>
-                                <div style="font-size:${format === '100x150' ? '16px' : (format === '100x75' ? '13px' : '8.5px')}; font-weight:700;" class="mono">LOC: ${formatLocationCode(item.location)}</div>
+                                <div style="font-size:${format === '100x150' ? '18px' : (format === '100x75' ? '14px' : '9px')}; font-weight:700;">${escapeHTML(item.name || '')}</div>
+                                <div style="font-size:${format === '100x150' ? '14px' : (format === '100x75' ? '12px' : '8px')}; color:#334155;" class="mono">SKU: ${escapeHTML(item.category || '-')}</div>
+                                <div class="barcode-svg-container"><svg id="pw-svg-${escapeHTML(item.sn)}"></svg></div>
+                                <div style="font-size:${format === '100x150' ? '16px' : (format === '100x75' ? '13px' : '8.5px')}; font-weight:700;" class="mono">LOC: ${escapeHTML(formatLocationCode(item.location))}</div>
                             </div>
                         </div>
                     `;
@@ -2941,7 +3604,7 @@ date_default_timezone_set('Asia/Bangkok');
                 </head>
                 <body>
                     <div class="print-control-bar">
-                        <div style="font-weight:700; font-size:15px;">📄 พิมพ์บาร์โค้ดสติ๊กเกอร์ (${format}) - รวม ${targetItems.length} รายการ</div>
+                        <div style="font-weight:700; font-size:15px;">📄 พิมพ์บาร์โค้ดสติ๊กเกอร์ (${escapeHTML(format)}) - รวม ${targetItems.length} รายการ</div>
                         <div>
                             <button class="btn-print-action" onclick="window.print()">🖨️ สั่งพิมพ์ซ้ำ (Print)</button>
                             <button class="btn-close-action" onclick="window.close()">❌ ปิดหน้าต่าง</button>
@@ -2959,16 +3622,19 @@ date_default_timezone_set('Asia/Bangkok');
                             items.forEach(item => {
                                 const snLen = item.sn ? item.sn.length : 10;
                                 const dynamicWidth = snLen > 20 ? 0.8 : (snLen > 14 ? 1.0 : 1.2);
-                                if(format === 'A4') {
-                                    JsBarcode("#pw-svg-" + item.sn, item.sn, { format: "CODE128", width: 1.4, height: 42, displayValue: true, fontSize: 10, margin: 2 });
-                                } else if(format === '100x150') {
-                                    JsBarcode("#pw-svg-" + item.sn, item.sn, { format: "CODE128", width: 2.2, height: 110, displayValue: true, fontSize: 16, margin: 5 });
-                                } else if(format === '100x75') {
-                                    JsBarcode("#pw-svg-" + item.sn, item.sn, { format: "CODE128", width: 1.8, height: 60, displayValue: true, fontSize: 12, margin: 4 });
-                                } else if(format === '40x30') {
-                                    JsBarcode("#pw-svg-" + item.sn, item.sn, { format: "CODE128", width: dynamicWidth, height: 26, displayValue: true, fontSize: 8.5, margin: 1 });
-                                } else {
-                                    JsBarcode("#pw-svg-" + item.sn, item.sn, { format: "CODE128", width: dynamicWidth, height: 30, displayValue: true, fontSize: 9, margin: 2 });
+                                const svgElem = document.getElementById("pw-svg-" + item.sn);
+                                if(svgElem) {
+                                    if(format === 'A4') {
+                                        JsBarcode(svgElem, item.sn, { format: "CODE128", width: 1.4, height: 42, displayValue: true, fontSize: 10, margin: 2 });
+                                    } else if(format === '100x150') {
+                                        JsBarcode(svgElem, item.sn, { format: "CODE128", width: 2.2, height: 110, displayValue: true, fontSize: 16, margin: 5 });
+                                    } else if(format === '100x75') {
+                                        JsBarcode(svgElem, item.sn, { format: "CODE128", width: 1.8, height: 60, displayValue: true, fontSize: 12, margin: 4 });
+                                    } else if(format === '40x30') {
+                                        JsBarcode(svgElem, item.sn, { format: "CODE128", width: dynamicWidth, height: 26, displayValue: true, fontSize: 8.5, margin: 1 });
+                                    } else {
+                                        JsBarcode(svgElem, item.sn, { format: "CODE128", width: dynamicWidth, height: 30, displayValue: true, fontSize: 9, margin: 2 });
+                                    }
                                 }
                             });
 
@@ -2987,9 +3653,9 @@ date_default_timezone_set('Asia/Bangkok');
         // --- SINGLE RELOCATE ENGINE ---
         function openRelocateModal(id, sn, name, currentLoc) {
             document.getElementById('relocateItemId').value = id;
-            document.getElementById('relocateItemSn').textContent = sn;
-            document.getElementById('relocateItemName').textContent = name;
-            document.getElementById('relocateItemCurrentLoc').textContent = formatLocationCode(currentLoc);
+            document.getElementById('relocateItemSn').textContent = escapeHTML(sn);
+            document.getElementById('relocateItemName').textContent = escapeHTML(name);
+            document.getElementById('relocateItemCurrentLoc').textContent = escapeHTML(formatLocationCode(currentLoc));
             
             populateRelocateBaysDropdown();
             onRelocateAisleOrBayChange();
@@ -3034,7 +3700,6 @@ date_default_timezone_set('Asia/Bangkok');
             const bay = document.getElementById('relocateBaySelect').value;
             const cfg = aisleConfigs[aisle] || { shelves: 1, slots: 10 };
 
-            const occupiedLocations = new Set(globalInventoryData.map(i => (i.location || '').toUpperCase()));
             let foundAvailableSlot = false;
 
             for(let s=1; s<=cfg.shelves; s++) {
@@ -3043,7 +3708,7 @@ date_default_timezone_set('Asia/Bangkok');
                     const slotStr = `S${st}`;
                     const targetLoc = `${aisle}-${bay}-${shelfStr}-${slotStr}`.toUpperCase();
 
-                    if(!occupiedLocations.has(targetLoc)) {
+                    if(!occupiedLocationsSet.has(targetLoc)) {
                         document.getElementById('relocateShelfSelect').value = shelfStr;
                         document.getElementById('relocateSlotSelect').value = slotStr;
                         foundAvailableSlot = true;
@@ -3085,6 +3750,7 @@ date_default_timezone_set('Asia/Bangkok');
                 globalInventoryData[itemIdx].location = newLoc;
             }
 
+            rebuildOccupiedSet();
             playSuccessSound();
             showToast(`✅ ย้ายพิกัดจัดเก็บใหม่เป็น ${newLoc} สำเร็จ`);
             closeRelocateModal();
@@ -3131,7 +3797,6 @@ date_default_timezone_set('Asia/Bangkok');
             }
 
             const cfg = aisleConfigs[targetAisle] || { bays: 10, shelves: 1, slots: 10 };
-            const occupiedLocations = new Set(globalInventoryData.map(i => (i.location || '').toUpperCase()));
 
             let availableSlotsCount = 0;
             for (let b = 1; b <= cfg.bays; b++) {
@@ -3139,7 +3804,7 @@ date_default_timezone_set('Asia/Bangkok');
                 for (let s = 1; s <= cfg.shelves; s++) {
                     for (let st = 1; st <= cfg.slots; st++) {
                         const targetLoc = `${targetAisle}-${bayStr}-L${s}-S${st}`.toUpperCase();
-                        if (!occupiedLocations.has(targetLoc)) {
+                        if (!occupiedLocationsSet.has(targetLoc)) {
                             availableSlotsCount++;
                         }
                     }
@@ -3159,7 +3824,6 @@ date_default_timezone_set('Asia/Bangkok');
         async function executeBatchRelocate() {
             const targetAisle = document.getElementById('batchRelocateAisleSelect').value;
             const targetSns = Array.from(selectedItemSnSet);
-            const occupiedLocations = new Set(globalInventoryData.map(i => (i.location || '').toUpperCase()));
 
             let updatesList = [];
 
@@ -3178,8 +3842,8 @@ date_default_timezone_set('Asia/Bangkok');
                             if (snIdx >= targetSns.length) break;
 
                             const targetLoc = `${targetAisle}-${bayStr}-L${s}-S${st}`.toUpperCase();
-                            if (!occupiedLocations.has(targetLoc)) {
-                                occupiedLocations.add(targetLoc);
+                            if (!occupiedLocationsSet.has(targetLoc)) {
+                                occupiedLocationsSet.add(targetLoc);
                                 updatesList.push({ sn: targetSns[snIdx], newLoc: targetLoc });
                                 snIdx++;
                             }
@@ -3206,6 +3870,7 @@ date_default_timezone_set('Asia/Bangkok');
             selectedItemSnSet.clear();
             closeBatchRelocateModal();
 
+            rebuildOccupiedSet();
             filterInventoryData();
             updateKPIs();
             refreshLocationVisualizerIfActive();
@@ -3222,9 +3887,10 @@ date_default_timezone_set('Asia/Bangkok');
             }
         }
 
-        // --- WAREHOUSE LOCATION CONFIG WITH INSTANT REALTIME AUTO-SAVE ---
+        // --- WAREHOUSE LOCATION CONFIG WITH INSTANT REALTIME AUTO-SAVE & MODERN TABLE RENDER ---
         function renderAisleSettingsTable() {
             const tbody = document.getElementById('aisleSettingsTableBody');
+            if(!tbody) return;
             tbody.innerHTML = '';
 
             masterAisles.forEach((aisle, idx) => {
@@ -3237,21 +3903,31 @@ date_default_timezone_set('Asia/Bangkok');
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td style="text-align:center; font-weight:700;" class="mono">${idx + 1}</td>
-                    <td><strong class="mono" style="color:var(--primary);">แถว ${aisle}</strong></td>
-                    <td style="text-align:center;">
-                        <input type="number" class="form-control mono" style="width:80px; text-align:center; padding:4px;" value="${cfg.bays}" min="1" onchange="updateAisleConfigRealtime('${aisle}', 'bays', this.value)">
+                    <td>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span class="badge-location mono" style="font-size:0.9rem; padding:5px 12px;">
+                                <i class="fa-solid fa-layer-group"></i> ${aisle === 'DOCK' ? 'ลาน DOCK' : `แถว ${escapeHTML(aisle)}`}
+                            </span>
+                        </div>
                     </td>
                     <td style="text-align:center;">
-                        <input type="number" class="form-control mono" style="width:80px; text-align:center; padding:4px;" value="${cfg.shelves}" min="1" onchange="updateAisleConfigRealtime('${aisle}', 'shelves', this.value)">
+                        <input type="number" class="form-control mono" style="width:85px; text-align:center; font-weight:700; display:inline-block;" value="${cfg.bays}" min="1" onchange="updateAisleConfigRealtime('${escapeHTML(aisle)}', 'bays', this.value)">
                     </td>
                     <td style="text-align:center;">
-                        <input type="number" class="form-control mono" style="width:80px; text-align:center; padding:4px;" value="${cfg.slots}" min="1" onchange="updateAisleConfigRealtime('${aisle}', 'slots', this.value)">
+                        <input type="number" class="form-control mono" style="width:85px; text-align:center; font-weight:700; display:inline-block;" value="${cfg.shelves}" min="1" onchange="updateAisleConfigRealtime('${escapeHTML(aisle)}', 'shelves', this.value)">
                     </td>
-                    <td style="text-align:center;" class="mono">${count} เครื่อง</td>
                     <td style="text-align:center;">
-                        <button class="btn btn-sm btn-secondary" ${idx === 0 ? 'disabled' : ''} onclick="moveAisleOrder(${idx}, -1)"><i class="fa-solid fa-arrow-up"></i> ขึ้น</button>
-                        <button class="btn btn-sm btn-secondary" ${idx === masterAisles.length - 1 ? 'disabled' : ''} onclick="moveAisleOrder(${idx}, 1)"><i class="fa-solid fa-arrow-down"></i> ลง</button>
-                        <button class="btn btn-sm btn-danger" ${idx === 0 ? 'disabled' : ''} onclick="deleteAisleConfig('${aisle}')"><i class="fa-solid fa-trash"></i> ลบ</button>
+                        <input type="number" class="form-control mono" style="width:85px; text-align:center; font-weight:700; display:inline-block;" value="${cfg.slots}" min="1" onchange="updateAisleConfigRealtime('${escapeHTML(aisle)}', 'slots', this.value)">
+                    </td>
+                    <td style="text-align:center;">
+                        <span class="mono font-bold" style="color:var(--primary); font-size:0.9rem;">${count.toLocaleString()} เครื่อง</span>
+                    </td>
+                    <td style="text-align:center;">
+                        <div style="display:inline-flex; gap:4px;">
+                            <button class="btn btn-sm btn-secondary" ${idx === 0 ? 'disabled' : ''} onclick="moveAisleOrder(${idx}, -1)" title="เลื่อนขึ้น"><i class="fa-solid fa-arrow-up"></i></button>
+                            <button class="btn btn-sm btn-secondary" ${idx === masterAisles.length - 1 ? 'disabled' : ''} onclick="moveAisleOrder(${idx}, 1)" title="เลื่อนลง"><i class="fa-solid fa-arrow-down"></i></button>
+                            <button class="btn btn-sm btn-danger" ${idx === 0 ? 'disabled' : ''} onclick="deleteAisleConfig('${escapeHTML(aisle)}')" title="ลบแถว"><i class="fa-solid fa-trash-can"></i></button>
+                        </div>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -3322,17 +3998,20 @@ date_default_timezone_set('Asia/Bangkok');
 
         function renderMenuReorderTable() {
             const tbody = document.getElementById('menuReorderTableBody');
+            if(!tbody) return;
             tbody.innerHTML = '';
 
             menuConfig.forEach((item, idx) => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td style="text-align:center; font-weight:700;" class="mono">${idx + 1}</td>
-                    <td><i class="fa-solid ${item.icon}"></i> <strong>${item.label}</strong></td>
-                    <td><code class="mono" style="color:var(--text-sub);">${item.id}</code></td>
+                    <td><i class="fa-solid ${escapeHTML(item.icon)}" style="color:var(--primary); margin-right:8px;"></i> <strong style="font-size:0.9rem;">${escapeHTML(item.label)}</strong></td>
+                    <td><code class="mono" style="color:var(--text-sub); font-size:0.82rem; background:var(--bg-subtle); padding:2px 8px; border-radius:4px;">${escapeHTML(item.id)}</code></td>
                     <td style="text-align:center;">
-                        <button class="btn btn-sm btn-secondary" ${idx === 0 ? 'disabled' : ''} onclick="moveMenuOrder(${idx}, -1)"><i class="fa-solid fa-arrow-up"></i> เลื่อนขึ้น</button>
-                        <button class="btn btn-sm btn-secondary" ${idx === menuConfig.length - 1 ? 'disabled' : ''} onclick="moveMenuOrder(${idx}, 1)"><i class="fa-solid fa-arrow-down"></i> เลื่อนลง</button>
+                        <div style="display:inline-flex; gap:4px;">
+                            <button class="btn btn-sm btn-secondary" ${idx === 0 ? 'disabled' : ''} onclick="moveMenuOrder(${idx}, -1)"><i class="fa-solid fa-arrow-up"></i> ขึ้น</button>
+                            <button class="btn btn-sm btn-secondary" ${idx === menuConfig.length - 1 ? 'disabled' : ''} onclick="moveMenuOrder(${idx}, 1)"><i class="fa-solid fa-arrow-down"></i> ลง</button>
+                        </div>
                     </td>
                 `;
                 tbody.appendChild(tr);

@@ -1,6 +1,6 @@
 <?php 
 // =========================================================================
-// --- WMS Enterprise Suite v2026 Ultimate Hardened & Modern UX/UI Edition ---
+// --- WMS Enterprise Suite v2026 Hardened Edition (Audit Log & Security) ---
 // =========================================================================
 session_start();
 date_default_timezone_set('Asia/Bangkok');
@@ -534,7 +534,7 @@ date_default_timezone_set('Asia/Bangkok');
         .btn-secondary { background: var(--bg-subtle); color: var(--text-main); border: 1px solid var(--border-strong); }
         .btn-secondary:hover { background: var(--bg-hover); }
 
-        /* Fullscreen Table Layout with Optimized Word Wrap & Alignment */
+        /* Fullscreen Table Layout */
         .table-responsive {
             width: 100%;
             overflow-x: auto;
@@ -564,20 +564,11 @@ date_default_timezone_set('Asia/Bangkok');
             padding: 10px 12px;
             border-bottom: 1px solid var(--border-color);
             vertical-align: middle;
+            white-space: nowrap;
         }
-        
-        /* UX/UI Improvement: Model Name Multi-line Wrap & Tight Columns */
-        td.col-name-wrap {
-            white-space: normal !important;
-            word-break: break-word;
-            max-width: 220px;
-            min-width: 170px;
-            line-height: 1.35;
-        }
-
         tbody tr:hover { background-color: var(--bg-subtle); }
 
-        /* Badges */
+        /* Badge Location */
         .badge-location {
             display: inline-flex;
             align-items: center;
@@ -589,21 +580,6 @@ date_default_timezone_set('Asia/Bangkok');
             background: var(--primary-light);
             color: var(--primary-text);
             border: 1px solid var(--primary-border);
-            white-space: nowrap;
-        }
-
-        .badge-meter {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            padding: 3px 8px;
-            border-radius: 6px;
-            font-size: 0.8rem;
-            font-weight: 700;
-            background: var(--warning-light);
-            color: var(--warning);
-            border: 1px solid rgba(245, 158, 11, 0.3);
-            white-space: nowrap;
         }
 
         /* Activity Action Badges */
@@ -693,40 +669,23 @@ date_default_timezone_set('Asia/Bangkok');
 
         .rack-slots-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-            gap: 1.2rem;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1rem;
         }
         .slot-card {
             background: var(--bg-surface);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-md);
-            padding: 1rem;
+            padding: 0.9rem;
             box-shadow: var(--shadow-sm);
         }
         .slot-card-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 0.75rem;
-            padding-bottom: 0.5rem;
+            margin-bottom: 0.6rem;
+            padding-bottom: 0.4rem;
             border-bottom: 1px solid var(--border-color);
-        }
-
-        /* NEW UX/UI ITEM CARD INSIDE RACK SLOT */
-        .slot-item-card {
-            background: var(--bg-subtle);
-            border: 1px solid var(--border-strong);
-            border-radius: var(--radius-md);
-            padding: 10px 12px;
-            margin-bottom: 8px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            transition: all 0.2s ease;
-        }
-        .slot-item-card:hover {
-            border-color: var(--primary);
-            box-shadow: var(--shadow-sm);
         }
 
         /* Modal Overlay */
@@ -894,15 +853,15 @@ date_default_timezone_set('Asia/Bangkok');
             </div>
             
             <div style="display:flex; align-items:center; gap:10px;">
-                <!-- FEATURE: Theme Switcher Toggle Button -->
+                <!-- NEW FEATURE: Theme Switcher Toggle Button -->
                 <button class="theme-toggle-btn" onclick="toggleAppTheme()" title="สลับธีม สว่าง / มืด">
                     <i class="fa-solid fa-sun" id="themeIconSun" style="color:#f59e0b;"></i>
                     <i class="fa-solid fa-moon" id="themeIconMoon" style="display:none; color:#a5b4fc;"></i>
                     <span id="themeToggleText">โหมดสว่าง</span>
                 </button>
 
-                <!-- FEATURE: Automated Thai Female AI Voice Toggle Button -->
-                <button class="btn btn-sm btn-secondary" id="voiceToggleBtn" onclick="toggleVoiceAudioAlert()" title="เปิด/ปิด เสียง AI อ่านออกเสียงภาษาไทยผู้หญิงสมจริง">
+                <!-- NEW FEATURE: AI Voice Audio Toggle -->
+                <button class="btn btn-sm btn-secondary" id="voiceToggleBtn" onclick="toggleVoiceAudioAlert()" title="เปิด/ปิด เสียง AI อ่านออกเสียงพูดภาษาไทย">
                     <i class="fa-solid fa-volume-high" style="color:var(--success);"></i> AI Voice On
                 </button>
 
@@ -968,7 +927,7 @@ date_default_timezone_set('Asia/Bangkok');
                     <!-- Filter Controls Section -->
                     <div style="margin-bottom: 0.8rem; display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center; justify-content: space-between; background:var(--bg-subtle); padding:0.7rem; border-radius:var(--radius-md); border:1px solid var(--border-color);">
                         <div style="display:flex; gap:0.6rem; flex-wrap:wrap; flex:1;">
-                            <input type="text" id="searchInput" class="form-control" style="max-width: 250px;" placeholder="🔍 ค้นหา S/N, SKU, ชื่อรุ่น, เลขมิเตอร์..." oninput="filterInventoryData()">
+                            <input type="text" id="searchInput" class="form-control" style="max-width: 250px;" placeholder="🔍 ค้นหา S/N, SKU, ชื่อรุ่น..." oninput="filterInventoryData()">
                             
                             <!-- Filter By Aisle -->
                             <select id="filterAisleSelect" class="form-select mono" style="max-width: 160px;" onchange="onFilterAisleChange()">
@@ -988,27 +947,25 @@ date_default_timezone_set('Asia/Bangkok');
                         <span id="totalCountBadge" class="status-badge">ดึงข้อมูลแล้ว 0 รายการ</span>
                     </div>
 
-                    <!-- UX/UI Improved Table Alignment Structure -->
                     <div class="table-responsive">
                         <table>
                             <thead>
                                 <tr>
                                     <th style="width: 38px; text-align: center;"><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAllItems(this.checked)"></th>
-                                    <th style="width: 42px; text-align: center;">#</th>
-                                    <th style="width: 120px;"><i class="fa-solid fa-barcode"></i> SKU</th>
-                                    <th style="min-width: 180px; max-width: 230px;"><i class="fa-solid fa-box"></i> ชื่อรุ่น / รายละเอียด</th>
-                                    <th style="width: 140px;"><i class="fa-solid fa-qrcode"></i> ซีเรียล (S/N)</th>
-                                    <th style="width: 110px;"><i class="fa-solid fa-gauge-high"></i> เลขมิเตอร์</th>
-                                    <th style="width: 130px;"><i class="fa-solid fa-location-dot"></i> พิกัดจัดเก็บ</th>
-                                    <th style="width: 55px; text-align: center;">จำนวน</th>
-                                    <th style="width: 135px;"><i class="fa-solid fa-calendar-days"></i> รับเข้าเมื่อ</th>
-                                    <th style="width: 70px; text-align: center;">พิมพ์</th>
-                                    <th style="width: 65px; text-align: center;">ย้าย</th>
-                                    <th style="width: 65px; text-align: center;">ลบ</th>
+                                    <th style="width: 45px; text-align: center;">#</th>
+                                    <th style="min-width: 130px;"><i class="fa-solid fa-barcode"></i> SKU</th>
+                                    <th style="min-width: 220px;"><i class="fa-solid fa-box"></i> ชื่อรุ่น / รายละเอียด</th>
+                                    <th style="min-width: 160px;"><i class="fa-solid fa-qrcode"></i> ซีเรียล (S/N)</th>
+                                    <th style="min-width: 150px;"><i class="fa-solid fa-location-dot"></i> พิกัดจัดเก็บ</th>
+                                    <th style="width: 60px; text-align: center;">จำนวน</th>
+                                    <th style="min-width: 140px;"><i class="fa-solid fa-calendar-days"></i> รับเข้าเมื่อ</th>
+                                    <th style="width: 75px; text-align: center;">พิมพ์</th>
+                                    <th style="width: 70px; text-align: center;">ย้าย</th>
+                                    <th style="width: 70px; text-align: center;">ลบ</th>
                                 </tr>
                             </thead>
                             <tbody id="inventoryTableBody">
-                                <tr><td colspan="12" style="text-align:center; padding:24px; color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> กำลังโหลดข้อมูลทั้งหมดจาก DB...</td></tr>
+                                <tr><td colspan="11" style="text-align:center; padding:24px; color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> กำลังโหลดข้อมูลทั้งหมดจาก DB...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -1060,24 +1017,14 @@ date_default_timezone_set('Asia/Bangkok');
                                 </div>
                             </div>
 
-                            <div class="form-grid">
-                                <div class="form-group" style="background:var(--primary-light); border:1px solid var(--primary-border); padding:0.9rem; border-radius:var(--radius-md);">
-                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                                        <label for="inboundSn" style="color:var(--primary-text); font-size:0.88rem; margin-bottom:0; font-weight:700;">
-                                            <i class="fa-solid fa-barcode" style="font-size:1.1rem;"></i> หมายเลขซีเรียล (S/N)
-                                        </label>
-                                        <button type="button" class="btn btn-sm btn-secondary" onclick="generateAutoSN()"><i class="fa-solid fa-wand-magic-sparkles"></i> สุ่ม S/N</button>
-                                    </div>
-                                    <input type="text" id="inboundSn" class="form-control mono" style="font-weight:700; font-size:1.1rem; border-color:var(--primary);" placeholder="🎯 ยิงปืนสแกน S/N แล้วกด Enter..." required autofocus>
-                                </div>
-
-                                <!-- COPY MACHINE METER READING INPUT -->
-                                <div class="form-group" style="background:var(--warning-light); border:1px solid rgba(245, 158, 11, 0.3); padding:0.9rem; border-radius:var(--radius-md);">
-                                    <label for="inboundMeter" style="color:var(--warning); font-size:0.88rem; margin-bottom:6px; font-weight:700;">
-                                        <i class="fa-solid fa-gauge-high" style="font-size:1.1rem;"></i> เลขมิเตอร์เครื่องถ่ายเอกสาร (ถ้ามี)
+                            <div class="form-group" style="background:var(--primary-light); border:1px solid var(--primary-border); padding:0.9rem; border-radius:var(--radius-md);">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                                    <label for="inboundSn" style="color:var(--primary-text); font-size:0.88rem; margin-bottom:0; font-weight:700;">
+                                        <i class="fa-solid fa-barcode" style="font-size:1.1rem;"></i> หมายเลขซีเรียล (S/N)
                                     </label>
-                                    <input type="number" id="inboundMeter" class="form-control mono" style="font-weight:700; font-size:1.1rem; border-color:var(--warning);" placeholder="เช่น 125400 (คีย์หรือไม่ก็ได้)" min="0">
+                                    <button type="button" class="btn btn-sm btn-secondary" onclick="generateAutoSN()"><i class="fa-solid fa-wand-magic-sparkles"></i> สุ่ม S/N</button>
                                 </div>
+                                <input type="text" id="inboundSn" class="form-control mono" style="font-weight:700; font-size:1.1rem; border-color:var(--primary);" placeholder="🎯 ยิงปืนสแกน S/N แล้วกด Enter (มีเสียงเตือน)..." required autofocus>
                             </div>
 
                             <div class="card" style="background:var(--bg-subtle); padding:0.9rem; margin-top:0.4rem; margin-bottom:0.8rem;">
@@ -1132,7 +1079,7 @@ date_default_timezone_set('Asia/Bangkok');
                 </div>
             </section>
 
-            <!-- VIEW 3: OUTBOUND ISSUE & WORK ORDER ENGINE (WITH DB LOGGING) -->
+            <!-- VIEW 3: OUTBOUND ISSUE & WORK ORDER ENGINE -->
             <section id="view-outbound" class="view-section">
                 <div class="fullscreen-split-layout">
                     <!-- Left Column: Scan Outbound Form -->
@@ -1177,20 +1124,19 @@ date_default_timezone_set('Asia/Bangkok');
                                                 <th>SKU</th>
                                                 <th>ชื่อสินค้า</th>
                                                 <th>S/N</th>
-                                                <th>เลขมิเตอร์</th>
                                                 <th>พิกัดเดิม</th>
                                                 <th style="text-align:center;">ยกเลิก</th>
                                             </tr>
                                         </thead>
                                         <tbody id="outboundCartTableBody">
-                                            <tr><td colspan="7" style="text-align:center; padding:15px; color:var(--text-muted);">ยังไม่มีรายการ ยิงสแกน S/N เพื่อเพิ่มเข้าใบสั่งจ่าย</td></tr>
+                                            <tr><td colspan="6" style="text-align:center; padding:15px; color:var(--text-muted);">ยังไม่มีรายการ ยิงสแกน S/N เพื่อเพิ่มเข้าใบสั่งจ่าย</td></tr>
                                         </tbody>
                                     </table>
                                 </div>
                             </div>
 
                             <button type="button" class="btn btn-warning" style="width: 100%; padding: 12px; font-size:0.95rem;" onclick="processFinalOutboundWorkOrder()">
-                                <i class="fa-solid fa-receipt"></i> ยืนยันตัดจ่ายสินค้า + บันทึกใบงานลง DB (ENTER)
+                                <i class="fa-solid fa-receipt"></i> ยืนยันตัดจ่ายสินค้า + ออกใบงานจ่ายสินค้า (ENTER)
                             </button>
                         </form>
                     </div>
@@ -1199,19 +1145,19 @@ date_default_timezone_set('Asia/Bangkok');
                     <div>
                         <div class="card">
                             <div class="card-header">
-                                <div class="card-title" style="font-size:0.95rem;"><i class="fa-solid fa-clock-rotate-left" style="color:var(--warning);"></i> ประวัติใบสั่งจ่ายล่าสุด (Outbound Orders DB)</div>
+                                <div class="card-title" style="font-size:0.95rem;"><i class="fa-solid fa-clock-rotate-left" style="color:var(--warning);"></i> ประวัติใบสั่งจ่ายล่าสุด (Outbound Orders)</div>
                                 <span class="status-badge" style="font-size:0.75rem;"><i class="fa-solid fa-print"></i> พิมพ์ใบงานย้อนหลัง</span>
                             </div>
 
                             <div id="liveOutboundFeedContainer" style="max-height:480px; overflow-y:auto;">
-                                <div style="text-align:center; padding:20px; color:var(--text-muted); font-size:0.85rem;">กำลังดึงประวัติใบสั่งจ่ายจาก Supabase...</div>
+                                <div style="text-align:center; padding:20px; color:var(--text-muted); font-size:0.85rem;">ยังไม่มีประวัติใบสั่งจ่ายสินค้า</div>
                             </div>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- VIEW 4: DRILL-DOWN LOCATION RACKS WITH MODERN UX/UI ITEMS CARDS -->
+            <!-- VIEW 4: DRILL-DOWN LOCATION RACKS WITH REAL-SLOTS CAPACITY BARS -->
             <section id="view-locations" class="view-section">
                 <div class="card">
                     <div class="card-header">
@@ -1229,7 +1175,7 @@ date_default_timezone_set('Asia/Bangkok');
 
                     <!-- Step 3: View Shelves & Slots Inside Selected Bay or DOCK -->
                     <div style="font-size:0.85rem; font-weight:700; color:var(--text-sub); margin-bottom:0.5rem; display:flex; justify-content:space-between; align-items:center;">
-                        <span>3. รายการ S/N ทั้งหมดในพื้นที่ที่เลือก (ปรับปรุง UX/UI ให้อ่านง่าย สวยงาม):</span>
+                        <span>3. รายการ S/N ทั้งหมดในพื้นที่ที่เลือก:</span>
                         <span id="bayCapacityInfoText" class="mono" style="color:var(--primary-text); font-weight:700;"></span>
                     </div>
 
@@ -1299,6 +1245,7 @@ date_default_timezone_set('Asia/Bangkok');
             <!-- VIEW 6: WAREHOUSE LOCATION CONFIG & ADMIN USER MANAGEMENT -->
             <section id="view-settings" class="view-section">
                 
+                <!-- Modern Hero Banner -->
                 <div class="settings-hero-banner">
                     <div>
                         <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
@@ -1359,7 +1306,7 @@ date_default_timezone_set('Asia/Bangkok');
                     </div>
                 </div>
 
-                <!-- Section 2: User Management Section -->
+                <!-- Section 2: User Management Section (Multi-User Control Panel Sync Supabase DB) -->
                 <div class="settings-section-card">
                     <div class="card-header" style="border-bottom:none; margin-bottom:1rem; padding-bottom:0;">
                         <div class="card-title" style="font-size:1.1rem; color:var(--text-main);">
@@ -1419,36 +1366,7 @@ date_default_timezone_set('Asia/Bangkok');
         </main>
     </div>
 
-    <!-- MODAL: EDIT METER READING -->
-    <div id="editMeterModal" class="modal-overlay" style="display:none;">
-        <div class="card" style="width: 420px; max-width: 90vw;">
-            <div class="card-header">
-                <div class="card-title"><i class="fa-solid fa-gauge-high" style="color:var(--warning);"></i> บันทึก/แก้ไขเลขมิเตอร์เครื่องถ่ายเอกสาร</div>
-                <button class="btn btn-secondary" style="padding:4px 8px;" onclick="closeEditMeterModal()">&times;</button>
-            </div>
-
-            <div style="background:var(--bg-subtle); padding:10px; border-radius:8px; font-size:0.85rem; margin-bottom:1rem; border:1px solid var(--border-color);">
-                <div><strong>S/N:</strong> <span id="meterModalSn" class="mono font-bold" style="color:var(--primary-text);">-</span></div>
-                <div><strong>รุ่น:</strong> <span id="meterModalName">-</span></div>
-            </div>
-
-            <input type="hidden" id="meterModalItemId">
-
-            <div class="form-group" style="margin-bottom:1.2rem;">
-                <label for="meterModalValue"><i class="fa-solid fa-calculator" style="color:var(--warning);"></i> ระบุเลขมิเตอร์ (คีย์หรือไม่ก็ได้):</label>
-                <input type="number" id="meterModalValue" class="form-control mono" style="font-size:1.1rem; font-weight:700;" placeholder="เช่น 125400" min="0">
-            </div>
-
-            <div style="display:flex; gap:0.5rem;">
-                <button class="btn btn-primary" style="flex:1;" onclick="saveMeterReadingFromModal()">
-                    <i class="fa-solid fa-floppy-disk"></i> บันทึกเลขมิเตอร์ลง DB
-                </button>
-                <button class="btn btn-secondary" onclick="closeEditMeterModal()">ยกเลิก</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL: USER AUDIT LOG HISTORY POPUP -->
+    <!-- MODAL: USER AUDIT LOG HISTORY POPUP (ปุ่มรูปลูกตา ดูประวัติกิจกรรมผู้ใช้งานแบบเรียลไทม์) -->
     <div id="userHistoryAuditModal" class="modal-overlay" style="display:none;">
         <div class="card" style="width: 860px; max-width: 95vw; max-height: 90vh; display:flex; flex-direction:column;">
             <div class="card-header">
@@ -1459,6 +1377,7 @@ date_default_timezone_set('Asia/Bangkok');
                 <button class="btn btn-secondary" style="padding:4px 8px;" onclick="closeUserHistoryAuditModal()">&times;</button>
             </div>
 
+            <!-- User Info Bar -->
             <div style="background:var(--bg-subtle); padding:10px 14px; border-radius:var(--radius-md); border:1px solid var(--border-color); margin-bottom:1rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                 <div style="font-size:0.88rem; color:var(--text-main);">
                     <strong>ชื่อ-นามสกุล:</strong> <span id="auditTargetFullName">-</span> | 
@@ -1468,6 +1387,7 @@ date_default_timezone_set('Asia/Bangkok');
                 <button class="btn btn-sm btn-primary" onclick="refreshSingleUserLogs()"><i class="fa-solid fa-rotate"></i> ดึงข้อมูลเรียลไทม์</button>
             </div>
 
+            <!-- Filter Controls in Audit Modal -->
             <div style="display:flex; gap:0.6rem; margin-bottom:1rem; flex-wrap:wrap;">
                 <input type="text" id="auditModalSearchInput" class="form-control" placeholder="🔍 ค้นหาในประวัติผู้ใช้คนนี้..." oninput="filterIndividualAuditLogs()">
                 <select id="auditModalTypeFilter" class="form-select" style="max-width:200px;" onchange="filterIndividualAuditLogs()">
@@ -1481,6 +1401,7 @@ date_default_timezone_set('Asia/Bangkok');
                 </select>
             </div>
 
+            <!-- Logs Table inside Modal -->
             <div class="table-responsive" style="flex:1; max-height:450px;">
                 <table class="modern-table">
                     <thead>
@@ -1560,7 +1481,7 @@ date_default_timezone_set('Asia/Bangkok');
         </div>
     </div>
 
-    <!-- MODAL: CREATE / EDIT USER -->
+    <!-- MODAL: CREATE / EDIT USER (UPDATED SUPABASE REALTIME SYNC) -->
     <div id="createUserModal" class="modal-overlay" style="display:none;">
         <div class="card" style="width: 460px; max-width: 90vw;">
             <div class="card-header">
@@ -1780,7 +1701,7 @@ date_default_timezone_set('Asia/Bangkok');
     </div>
 
     <script>
-        // --- THEME SWITCHER SYSTEM (LIGHT & DARK THEMES) ---
+        // --- NEW FEATURE: THEME SWITCHER SYSTEM (LIGHT & DARK THEMES) ---
         function initThemeSystem() {
             const savedTheme = localStorage.getItem('WMS_THEME_MODE') || 'light';
             document.documentElement.setAttribute('data-theme', savedTheme);
@@ -1812,20 +1733,8 @@ date_default_timezone_set('Asia/Bangkok');
             }
         }
 
-        // =========================================================================
-        // --- AUTOMATED THAI FEMALE AI VOICE ENGINE (HUMAN-LIKE NATURAL VOICE) ---
-        // =========================================================================
+        // --- NEW FEATURE: AI VOICE AUDIO ALERTS ENGINE (SPEECH SYNTHESIS) ---
         let isVoiceAlertEnabled = true;
-        let availableVoices = [];
-
-        function initVoiceEngine() {
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.onvoiceschanged = () => {
-                    availableVoices = window.speechSynthesis.getVoices();
-                };
-                availableVoices = window.speechSynthesis.getVoices();
-            }
-        }
 
         function toggleVoiceAudioAlert() {
             isVoiceAlertEnabled = !isVoiceAlertEnabled;
@@ -1844,28 +1753,8 @@ date_default_timezone_set('Asia/Bangkok');
                 window.speechSynthesis.cancel();
                 const utterance = new SpeechSynthesisUtterance(text);
                 utterance.lang = 'th-TH';
-
-                // เลือกเฉพาะเสียงผู้หญิงภาษาไทยที่เป็นธรรมชาติที่สุดโดยอัตโนมัติ
-                const thaiVoices = availableVoices.filter(v => v.lang === 'th-TH' || v.lang.startsWith('th'));
-                let chosenFemaleVoice = null;
-
-                if (thaiVoices.length > 0) {
-                    chosenFemaleVoice = thaiVoices.find(v => 
-                        v.name.toLowerCase().includes('female') || 
-                        v.name.toLowerCase().includes('premwadee') || 
-                        v.name.toLowerCase().includes('kanya') || 
-                        v.name.toLowerCase().includes('google')
-                    ) || thaiVoices[0];
-                }
-
-                if (chosenFemaleVoice) {
-                    utterance.voice = chosenFemaleVoice;
-                }
-
-                // ปรับแต่ง Pitch & Rate ให้ออกเสียงเหมือนมนุษย์จริง นุ่มนวล ไม่เป็นหุ่นยนต์
-                utterance.pitch = 1.08; 
-                utterance.rate = 1.02;
-
+                utterance.rate = 1.05;
+                utterance.pitch = 1.0;
                 window.speechSynthesis.speak(utterance);
             } catch(e) {
                 console.log('Voice synthesis error:', e);
@@ -1890,7 +1779,7 @@ date_default_timezone_set('Asia/Bangkok');
             auth: { persistSession: false }
         });
 
-        // --- AUDIT TRAIL LOGGING ENGINE ---
+        // --- AUDIT TRAIL LOGGING ENGINE (บันทึกกิจกรรมผู้ใช้เข้า SUPABASE DB แบบเรียลไทม์) ---
         async function logUserActivity(actionType, description, targetSn = null) {
             if (!currentUser) return;
 
@@ -1926,7 +1815,7 @@ date_default_timezone_set('Asia/Bangkok');
         let isAdminAuthenticatedSession = false;
         let loginFailedAttempts = 0;
 
-        const AUTO_LOGOUT_TIMEOUT_MS = 15 * 60 * 1000;
+        const AUTO_LOGOUT_TIMEOUT_MS = 15 * 60 * 1000; // 15 นาที
         let autoLogoutTimer = null;
 
         function resetAutoLogoutTimer() {
@@ -1943,6 +1832,7 @@ date_default_timezone_set('Asia/Bangkok');
             });
         }
 
+        // --- SUPABASE USER MANAGEMENT REALTIME FETCH & SYNC ---
         async function loadUsersFromDB() {
             try {
                 const { data, error } = await _supabase
@@ -2020,6 +1910,7 @@ date_default_timezone_set('Asia/Bangkok');
             document.getElementById('loginUsername').focus();
         }
 
+        // --- LOGIN VERIFICATION VIA SUPABASE DB ---
         async function handleSystemLogin(e) {
             e.preventDefault();
             
@@ -2174,6 +2065,7 @@ date_default_timezone_set('Asia/Bangkok');
             closeChangePasswordModal();
         }
 
+        // --- RENDER USER MANAGEMENT TABLE WITH EYE ICON BUTTON ---
         function renderUserManagementTable() {
             const tbody = document.getElementById('userManagementTableBody');
             if(!tbody) return;
@@ -2212,6 +2104,7 @@ date_default_timezone_set('Asia/Bangkok');
             });
         }
 
+        // --- OPEN & INSPECT INDIVIDUAL USER HISTORY (POPUP MODAL) ---
         async function openUserHistoryAuditModal(username) {
             const userObj = systemUsers.find(u => u.username === username);
             if(!userObj) return;
@@ -2339,6 +2232,7 @@ date_default_timezone_set('Asia/Bangkok');
             document.getElementById('createUserModal').style.display = 'none';
         }
 
+        // --- SUBMIT USER FORM REALTIME TO SUPABASE DB ---
         async function submitUserForm(e) {
             e.preventDefault();
             const id = document.getElementById('userFormId').value;
@@ -2424,6 +2318,7 @@ date_default_timezone_set('Asia/Bangkok');
             }
         }
 
+        // --- HARDENED ADMIN GUARD ENGINE ---
         function closeAdminGuardModal() {
             document.getElementById('adminGuardModal').style.display = 'none';
             document.getElementById('adminGuardPasswordInput').value = '';
@@ -2679,13 +2574,11 @@ date_default_timezone_set('Asia/Bangkok');
 
         document.addEventListener('DOMContentLoaded', async () => {
             initThemeSystem();
-            initVoiceEngine();
             await initAuthSystem();
             initOfflineDatabase();
             renderSidebarMenu();
             await loadWarehouseConfigsFromDB();
             await loadDataFromDatabase();
-            await loadOutboundOrdersFromDB();
             initRealtimeSubscription();
             populateAisleDropdowns();
             onInboundAisleOrBayChange();
@@ -2775,6 +2668,7 @@ date_default_timezone_set('Asia/Bangkok');
             setTimeout(() => toast.classList.remove('show'), 3500);
         }
 
+        // --- FETCH & RENDER USER ACTIVITY LOGS ---
         async function loadUserActivityLogsFromDB() {
             try {
                 const { data, error } = await _supabase
@@ -2869,6 +2763,7 @@ date_default_timezone_set('Asia/Bangkok');
             });
         }
 
+        // --- LOAD & REALTIME SYNC WAREHOUSE CONFIGS FROM DB ---
         async function loadWarehouseConfigsFromDB() {
             try {
                 const { data, error } = await _supabase
@@ -3230,13 +3125,6 @@ date_default_timezone_set('Asia/Bangkok');
                 .subscribe();
 
             _supabase
-                .channel('public:outbound_orders')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'outbound_orders' }, () => {
-                    loadOutboundOrdersFromDB();
-                })
-                .subscribe();
-
-            _supabase
                 .channel('public:warehouse_configs')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'warehouse_configs' }, async () => {
                     await loadWarehouseConfigsFromDB();
@@ -3276,7 +3164,6 @@ date_default_timezone_set('Asia/Bangkok');
             }
         }
 
-        // --- RENDER INVENTORY TABLE WITH WORD WRAP FOR MODEL NAME ---
         function renderInventoryTable(items) {
             const tbody = document.getElementById('inventoryTableBody');
             tbody.innerHTML = '';
@@ -3289,7 +3176,7 @@ date_default_timezone_set('Asia/Bangkok');
             if(relSpan) relSpan.textContent = selectedCount;
 
             if(items.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="12" style="text-align:center; padding:24px; color:var(--text-muted);">ไม่พบข้อมูลสินค้าตรงตามเงื่อนไขค้นหา</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; padding:24px; color:var(--text-muted);">ไม่พบข้อมูลสินค้าตรงตามเงื่อนไขค้นหา</td></tr>`;
                 return;
             }
 
@@ -3297,42 +3184,30 @@ date_default_timezone_set('Asia/Bangkok');
             items.forEach((item, index) => {
                 const isChecked = selectedItemSnSet.has(item.sn);
                 const formatLoc = formatLocationCode(item.location);
-                const meterVal = (item.meter_reading !== null && item.meter_reading !== undefined && item.meter_reading !== '') ? Number(item.meter_reading).toLocaleString() : '-';
-
+                
                 const tr = document.createElement('tr');
                 tr.setAttribute('id', `inventory-row-${escapeHTML(item.sn)}`);
                 tr.innerHTML = `
                     <td style="text-align:center;"><input type="checkbox" class="item-checkbox" data-sn="${escapeHTML(item.sn)}" ${isChecked ? 'checked' : ''} onchange="toggleItemSelection('${escapeHTML(item.sn)}', this.checked)"></td>
                     <td style="text-align:center; font-weight:700;" class="mono">${index + 1}</td>
                     <td><code class="mono" style="color:var(--primary-text); font-weight:700;">${escapeHTML(item.category || 'N/A')}</code></td>
-                    
-                    <!-- IMPROVED UX/UI: MODEL NAME MULTI-LINE WORD WRAP -->
-                    <td class="col-name-wrap font-bold" style="font-size:0.86rem; color:var(--text-main);">${escapeHTML(item.name || '-')}</td>
-                    
+                    <td style="font-weight:600;">${escapeHTML(item.name || '-')}</td>
                     <td><code class="mono" style="font-weight:700;">${escapeHTML(item.sn)}</code></td>
-                    <td>
-                        <span class="badge-meter mono" title="คลิกเพื่อคีย์เลขมิเตอร์ย้อนหลัง">
-                            <i class="fa-solid fa-gauge-high"></i> ${escapeHTML(meterVal)}
-                        </span>
-                        <button class="btn btn-sm btn-secondary" style="padding:2px 5px; font-size:0.7rem; margin-left:3px;" onclick="openEditMeterModal('${item.id}', '${escapeHTML(item.sn)}', '${escapeHTML(item.name)}', '${item.meter_reading || ''}')">
-                            <i class="fa-solid fa-pen"></i>
-                        </button>
-                    </td>
                     <td><span class="badge-location mono"><i class="fa-solid fa-location-dot"></i> ${escapeHTML(formatLoc)}</span></td>
                     <td style="text-align:center; font-weight:700;" class="mono">${item.qty ?? 1}</td>
                     <td style="font-size:0.78rem; color:var(--text-muted);">${item.created_at ? new Date(item.created_at).toLocaleString('th-TH') : '-'}</td>
                     <td style="text-align:center;">
-                        <button class="btn btn-sm btn-primary" style="padding:4px 8px;" onclick="openPrintBarcodeModal('SINGLE', '${escapeHTML(item.sn)}')">
+                        <button class="btn btn-sm btn-primary" onclick="openPrintBarcodeModal('SINGLE', '${escapeHTML(item.sn)}')">
                             <i class="fa-solid fa-barcode"></i> พิมพ์
                         </button>
                     </td>
                     <td style="text-align:center;">
-                        <button class="btn btn-sm btn-secondary" style="padding:4px 8px;" onclick="openRelocateModal('${item.id}', '${escapeHTML(item.sn)}', '${escapeHTML(item.name)}', '${escapeHTML(item.location)}')">
+                        <button class="btn btn-sm btn-secondary" onclick="openRelocateModal('${item.id}', '${escapeHTML(item.sn)}', '${escapeHTML(item.name)}', '${escapeHTML(item.location)}')">
                             <i class="fa-solid fa-right-left"></i> ย้าย
                         </button>
                     </td>
                     <td style="text-align:center;">
-                        <button class="btn btn-sm btn-danger" style="padding:4px 8px;" onclick="openDeleteConfirmModal('SINGLE', '${escapeHTML(item.sn)}', '${item.id}')">
+                        <button class="btn btn-sm btn-danger" onclick="openDeleteConfirmModal('SINGLE', '${escapeHTML(item.sn)}', '${item.id}')">
                             <i class="fa-solid fa-trash"></i> ลบ
                         </button>
                     </td>
@@ -3341,48 +3216,6 @@ date_default_timezone_set('Asia/Bangkok');
             });
 
             tbody.appendChild(frag);
-        }
-
-        // --- METER READING EDITING FUNCTIONS ---
-        function openEditMeterModal(id, sn, name, currentMeter) {
-            document.getElementById('meterModalItemId').value = id;
-            document.getElementById('meterModalSn').textContent = escapeHTML(sn);
-            document.getElementById('meterModalName').textContent = escapeHTML(name);
-            document.getElementById('meterModalValue').value = currentMeter || '';
-            document.getElementById('editMeterModal').style.display = 'flex';
-            document.getElementById('meterModalValue').focus();
-        }
-
-        function closeEditMeterModal() {
-            document.getElementById('editMeterModal').style.display = 'none';
-        }
-
-        async function saveMeterReadingFromModal() {
-            const id = document.getElementById('meterModalItemId').value;
-            const sn = document.getElementById('meterModalSn').textContent;
-            const val = document.getElementById('meterModalValue').value.trim();
-
-            const item = globalInventoryData.find(i => String(i.id) === String(id) || i.sn === sn);
-            if (item) {
-                item.meter_reading = val !== '' ? parseInt(val) : null;
-            }
-
-            closeEditMeterModal();
-            filterInventoryData();
-            refreshLocationVisualizerIfActive();
-
-            playSuccessSound();
-            speakThaiText(`บันทึกเลขมิเตอร์ซีเรียล ${sn} เรียบร้อยแล้วค่ะ`);
-            showToast(`⏱️ อัปเดตเลขมิเตอร์ S/N: ${sn} เป็น ${val !== '' ? val : 'ไม่ระบุ'} สำเร็จ`);
-
-            await logUserActivity('RELOCATE', `อัปเดตเลขมิเตอร์เป็น: ${val || 'ว่าง'}`, sn);
-
-            if (navigator.onLine) {
-                await _supabase
-                    .from('warehouse_items')
-                    .update({ meter_reading: val !== '' ? parseInt(val) : null })
-                    .eq('sn', sn);
-            }
         }
 
         function formatLocationCode(locRaw) {
@@ -3433,14 +3266,12 @@ date_default_timezone_set('Asia/Bangkok');
 
             const filtered = globalInventoryData.filter(item => {
                 const itemLoc = (item.location || 'DOCK').toUpperCase();
-                const meterStr = String(item.meter_reading || '');
 
                 const matchesQuery = (
                     (item.sn && item.sn.toLowerCase().includes(q)) ||
                     (item.name && item.name.toLowerCase().includes(q)) ||
                     (item.category && item.category.toLowerCase().includes(q)) ||
-                    (item.location && item.location.toLowerCase().includes(q)) ||
-                    (meterStr && meterStr.includes(q))
+                    (item.location && item.location.toLowerCase().includes(q))
                 );
 
                 let matchesAisle = true;
@@ -3670,7 +3501,6 @@ date_default_timezone_set('Asia/Bangkok');
             const sn = snInput.value.trim();
             const category = document.getElementById('inboundCategory').value.trim();
             const name = document.getElementById('inboundName').value.trim();
-            const meterInput = document.getElementById('inboundMeter').value.trim();
             const location = document.getElementById('inboundLocationPreview').textContent;
 
             if(!sn) return;
@@ -3688,13 +3518,10 @@ date_default_timezone_set('Asia/Bangkok');
             }
 
             const nowStr = new Date().toISOString();
-            const meterVal = meterInput !== '' ? parseInt(meterInput) : null;
-
             const payload = {
                 category: category,
                 name: name,
                 sn: sn,
-                meter_reading: meterVal,
                 location: location,
                 qty: 1,
                 unit: "เครื่อง",
@@ -3704,7 +3531,6 @@ date_default_timezone_set('Asia/Bangkok');
             globalInventoryData.unshift(payload);
 
             snInput.value = '';
-            document.getElementById('inboundMeter').value = '';
             snInput.focus();
 
             updateKPIs();
@@ -3712,7 +3538,7 @@ date_default_timezone_set('Asia/Bangkok');
             refreshLocationVisualizerIfActive();
             autoSelectAvailableSlot();
 
-            await logUserActivity('INBOUND', `รับเข้าสินค้า [SKU: ${category}] ${name} (มิเตอร์: ${meterVal || 'ว่าง'}) เข้าพิกัด ${location}`, sn);
+            await logUserActivity('INBOUND', `รับเข้าสินค้า [SKU: ${category}] ${name} เข้าพิกัด ${location}`, sn);
 
             if (!navigator.onLine) {
                 try {
@@ -3725,7 +3551,6 @@ date_default_timezone_set('Asia/Bangkok');
                         sn: sn,
                         category: category,
                         name: name,
-                        meter_reading: meterVal,
                         location: location,
                         time: new Date().toLocaleTimeString('th-TH'),
                         isOffline: true,
@@ -3754,7 +3579,6 @@ date_default_timezone_set('Asia/Bangkok');
                             sn: sn,
                             category: category,
                             name: name,
-                            meter_reading: meterVal,
                             location: location,
                             time: new Date().toLocaleTimeString('th-TH'),
                             isOffline: false,
@@ -3773,8 +3597,6 @@ date_default_timezone_set('Asia/Bangkok');
             let html = '';
             recentInboundList.forEach(item => {
                 let cardClass = item.isOffline ? 'offline-queued' : (item.isSyncedSuccess ? 'db-synced-success' : '');
-                const mText = (item.meter_reading !== null && item.meter_reading !== undefined) ? ` | มิเตอร์: ${item.meter_reading}` : '';
-
                 html += `
                     <div class="feed-item ${cardClass}">
                         <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -3782,7 +3604,7 @@ date_default_timezone_set('Asia/Bangkok');
                             <span class="badge-location mono">📍 ${escapeHTML(formatLocationCode(item.location))}</span>
                         </div>
                         <div style="font-size:0.8rem; color:var(--text-sub); font-weight:500;">
-                            [${escapeHTML(item.category)}] ${escapeHTML(item.name)}${mText}
+                            [${escapeHTML(item.category)}] ${escapeHTML(item.name)}
                         </div>
                         <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.72rem; color:var(--text-muted); margin-top:2px;">
                             <span>${item.isOffline ? '⚠️ ค้างอัปโหลด (Offline)' : '⚡ DB Online (อัปโหลดสำเร็จ)'}</span>
@@ -3838,20 +3660,18 @@ date_default_timezone_set('Asia/Bangkok');
             document.getElementById('outboundCartCountBadge').textContent = `${outboundCartItems.length} รายการ`;
 
             if (outboundCartItems.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:15px; color:var(--text-muted);">ยังไม่มีรายการ ยิงสแกน S/N เพื่อเพิ่มเข้าใบสั่งจ่าย</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:15px; color:var(--text-muted);">ยังไม่มีรายการ ยิงสแกน S/N เพื่อเพิ่มเข้าใบสั่งจ่าย</td></tr>`;
                 return;
             }
 
             let html = '';
             outboundCartItems.forEach((item, idx) => {
-                const mVal = (item.meter_reading !== null && item.meter_reading !== undefined) ? Number(item.meter_reading).toLocaleString() : '-';
                 html += `
                     <tr>
                         <td style="font-weight:700;" class="mono">${idx + 1}</td>
                         <td><code class="mono">${escapeHTML(item.category)}</code></td>
                         <td>${escapeHTML(item.name)}</td>
                         <td class="mono font-bold">${escapeHTML(item.sn)}</td>
-                        <td class="mono" style="color:var(--warning); font-weight:700;">${escapeHTML(mVal)}</td>
                         <td><span class="badge-location mono">📍 ${escapeHTML(formatLocationCode(item.location))}</span></td>
                         <td style="text-align:center;">
                             <button class="btn btn-sm btn-danger" style="padding:2px 6px;" onclick="removeOutboundFromCart('${escapeHTML(item.sn)}')">&times;</button>
@@ -3862,43 +3682,6 @@ date_default_timezone_set('Asia/Bangkok');
             tbody.innerHTML = html;
         }
 
-        // --- FETCH OUTBOUND ORDERS FROM SUPABASE DB ---
-        async function loadOutboundOrdersFromDB() {
-            try {
-                const { data, error } = await _supabase
-                    .from('outbound_orders')
-                    .select('*, outbound_order_items(*)')
-                    .order('created_at', { ascending: false })
-                    .limit(50);
-
-                if (error) {
-                    console.warn('โหลด outbound_orders ล้มเหลว:', error.message);
-                    return;
-                }
-
-                if (data && data.length > 0) {
-                    recentOutboundOrders = data.map(ord => ({
-                        orderNo: ord.order_no,
-                        destination: ord.destination,
-                        dispatcher: ord.dispatcher,
-                        receiver: ord.receiver,
-                        time: ord.created_at ? new Date(ord.created_at).toLocaleString('th-TH') : ord.order_time,
-                        items: ord.outbound_order_items ? ord.outbound_order_items.map(i => ({
-                            category: i.category,
-                            name: i.name,
-                            sn: i.sn,
-                            meter_reading: i.meter_reading,
-                            location: i.location
-                        })) : []
-                    }));
-                }
-                renderLiveOutboundOrdersFeed();
-            } catch(e) {
-                console.error("Fetch Outbound Error:", e);
-            }
-        }
-
-        // --- PROCESS & SAVE OUTBOUND WORK ORDERS TO SUPABASE DB ---
         async function processFinalOutboundWorkOrder() {
             const dest = document.getElementById('outboundDestination').value.trim();
             const disp = document.getElementById('outboundDispatcher').value.trim();
@@ -3916,7 +3699,6 @@ date_default_timezone_set('Asia/Bangkok');
 
             const orderNo = 'OUT' + Date.now().toString().slice(-6);
             const nowTimeStr = new Date().toLocaleString('th-TH');
-            const nowIso = new Date().toISOString();
 
             const orderData = {
                 orderNo: orderNo,
@@ -3929,40 +3711,6 @@ date_default_timezone_set('Asia/Bangkok');
 
             const removedSns = outboundCartItems.map(i => i.sn);
             const removedIds = outboundCartItems.map(i => i.id);
-
-            // บันทึกลง Supabase DB
-            if (navigator.onLine) {
-                const { data: orderHeader, error: headErr } = await _supabase
-                    .from('outbound_orders')
-                    .insert([{
-                        order_no: orderNo,
-                        destination: dest,
-                        dispatcher: disp,
-                        receiver: recv,
-                        total_items: outboundCartItems.length,
-                        created_at: nowIso
-                    }])
-                    .select()
-                    .single();
-
-                if (!headErr && orderHeader) {
-                    const orderItemsPayload = outboundCartItems.map(it => ({
-                        order_id: orderHeader.id,
-                        order_no: orderNo,
-                        category: it.category,
-                        name: it.name,
-                        sn: it.sn,
-                        meter_reading: it.meter_reading,
-                        location: it.location,
-                        created_at: nowIso
-                    }));
-
-                    await _supabase.from('outbound_order_items').insert(orderItemsPayload);
-                }
-
-                // ตัดรายการออกจากคลังสินค้า
-                await _supabase.from('warehouse_items').delete().in('id', removedIds);
-            }
 
             globalInventoryData = globalInventoryData.filter(i => !removedSns.includes(i.sn));
             recentOutboundOrders.unshift(orderData);
@@ -3978,19 +3726,20 @@ date_default_timezone_set('Asia/Bangkok');
 
             playSuccessSound();
             speakThaiText(`ตัดจ่ายสินค้าเรียบร้อย ออกใบงานจ่ายสินค้าเลขที่ ${orderNo} ค่ะ`);
-            showToast(`🎉 บันทึกใบสั่งจ่ายเลขที่ ${orderNo} และตัดจ่าย ${removedSns.length} รายการลง DB สำเร็จ!`);
+            showToast(`🎉 ออกใบสั่งจ่ายเลขที่ ${orderNo} และตัดจ่าย ${removedSns.length} รายการสำเร็จ!`);
 
             await logUserActivity('OUTBOUND', `ตัดจ่ายสินค้าเลขที่ ${orderNo} จำนวน ${removedSns.length} รายการ ไปยัง "${dest}"`);
+
+            if (navigator.onLine) {
+                await _supabase.from('warehouse_items').delete().in('id', removedIds);
+            }
 
             printOutboundWorkOrderDoc(orderNo);
         }
 
         function renderLiveOutboundOrdersFeed() {
             const container = document.getElementById('liveOutboundFeedContainer');
-            if (recentOutboundOrders.length === 0) {
-                container.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-muted); font-size:0.85rem;">ยังไม่มีประวัติใบสั่งจ่ายสินค้าในระบบ DB</div>`;
-                return;
-            }
+            if (recentOutboundOrders.length === 0) return;
 
             let html = '';
             recentOutboundOrders.forEach(ord => {
@@ -3998,7 +3747,7 @@ date_default_timezone_set('Asia/Bangkok');
                     <div class="feed-item outbound">
                         <div style="display:flex; justify-content:space-between; align-items:center;">
                             <strong class="mono" style="color:var(--warning); font-size:0.92rem;">📄 เลขที่: ${escapeHTML(ord.orderNo)}</strong>
-                            <button class="btn btn-sm btn-secondary" onclick="printOutboundWorkOrderDoc('${escapeHTML(ord.orderNo)}')"><i class="fa-solid fa-print"></i> พิมพ์ใบงาน</button>
+                            <button class="btn btn-sm btn-secondary" onclick="printOutboundWorkOrderDoc('${escapeHTML(ord.orderNo)}')"><i class="fa-solid fa-print"></i> พิมพ์ใบสั่งจ่าย</button>
                         </div>
                         <div style="font-size:0.8rem; color:var(--text-sub); margin-top:2px;">
                             <strong>ปลายทาง:</strong> ${escapeHTML(ord.destination)} | <strong>รวม:</strong> ${ord.items.length} เครื่อง
@@ -4029,7 +3778,6 @@ date_default_timezone_set('Asia/Bangkok');
                     <td style="padding:8px; border:1px solid #ddd;" class="mono">${escapeHTML(it.category || '-')}</td>
                     <td style="padding:8px; border:1px solid #ddd;">${escapeHTML(it.name || '-')}</td>
                     <td style="padding:8px; border:1px solid #ddd;" class="mono"><strong>${escapeHTML(it.sn)}</strong></td>
-                    <td style="text-align:center; padding:8px; border:1px solid #ddd;" class="mono">${escapeHTML(it.meter_reading || '-')}</td>
                     <td style="text-align:center; padding:8px; border:1px solid #ddd;" class="mono">${escapeHTML(formatLocationCode(it.location))}</td>
                 </tr>
             `).join('');
@@ -4077,7 +3825,6 @@ date_default_timezone_set('Asia/Bangkok');
                                 <th>รหัส SKU</th>
                                 <th>ชื่อรุ่น / รายละเอียดสินค้า</th>
                                 <th>หมายเลขซีเรียล (S/N)</th>
-                                <th style="text-align:center;">เลขมิเตอร์</th>
                                 <th style="text-align:center;">พิกัดเดิม</th>
                             </tr>
                         </thead>
@@ -4210,81 +3957,35 @@ date_default_timezone_set('Asia/Bangkok');
             });
         }
 
-        // --- NEW IMPROVED UX/UI RENDER SLOT CARD IN LOCATION VISUALIZER ---
         function renderSlotCard(container, slotTitle, items, isDockFull = false) {
             const card = document.createElement('div');
             card.className = 'slot-card';
             if(isDockFull) card.style.gridColumn = "1 / -1";
 
-            let rowsHtml = items.map(item => {
-                const meterVal = (item.meter_reading !== null && item.meter_reading !== undefined) ? item.meter_reading : '';
-
-                return `
-                    <div class="slot-item-card">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <div style="display:flex; align-items:center; gap:6px;">
-                                <i class="fa-solid fa-qrcode" style="color:var(--primary); font-size:0.85rem;"></i>
-                                <span class="mono font-bold" style="color:var(--primary-text); font-size:0.92rem;">${escapeHTML(item.sn)}</span>
-                            </div>
-                            <span class="mono" style="font-size:0.75rem; background:var(--primary-light); color:var(--primary-text); padding:2px 6px; border-radius:4px; font-weight:700;">
-                                ${escapeHTML(item.category || 'SKU')}
-                            </span>
-                        </div>
-                        
-                        <div style="font-size:0.82rem; font-weight:600; color:var(--text-main); line-height:1.3; margin:2px 0;">
-                            ${escapeHTML(item.name || 'ไม่ระบุรุ่น')}
-                        </div>
-
-                        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:4px; padding-top:6px; border-top:1px dashed var(--border-strong);">
-                            <div style="display:flex; align-items:center; gap:4px; flex:1;">
-                                <i class="fa-solid fa-gauge-high" style="font-size:0.8rem; color:var(--warning);"></i>
-                                <input type="number" class="form-control mono" style="font-size:0.78rem; padding:3px 6px; height:28px;" placeholder="เลขมิเตอร์..." value="${meterVal}" id="slot-meter-input-${item.id}">
-                                <button class="btn btn-sm btn-warning" style="padding:3px 8px; font-size:0.75rem;" onclick="saveMeterFromSlotCard('${item.id}', '${escapeHTML(item.sn)}')">บันทึก</button>
-                            </div>
-                            <div style="display:flex; gap:4px; flex-shrink:0;">
-                                <button class="btn btn-sm btn-primary" style="padding:3px 8px;" onclick="openPrintBarcodeModal('SINGLE', '${escapeHTML(item.sn)}')"><i class="fa-solid fa-print"></i> พิมพ์</button>
-                                <button class="btn btn-sm btn-secondary" style="padding:3px 8px;" onclick="openRelocateModal('${item.id}', '${escapeHTML(item.sn)}', '${escapeHTML(item.name)}', '${escapeHTML(item.location)}')"><i class="fa-solid fa-right-left"></i> ย้าย</button>
-                                <button class="btn btn-sm btn-danger" style="padding:3px 8px;" onclick="openDeleteConfirmModal('SINGLE', '${escapeHTML(item.sn)}', '${item.id}')"><i class="fa-solid fa-trash"></i> ลบ</button>
-                            </div>
-                        </div>
+            let rowsHtml = items.map(item => `
+                <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-subtle); padding:6px 10px; border-radius:6px; margin-bottom:6px; border:1px solid var(--border-color);">
+                    <div style="display:flex; gap:10px; align-items:center; overflow:hidden;">
+                        <span class="mono" style="font-weight:700; color:var(--primary-text); font-size:0.85rem;">${escapeHTML(item.sn)}</span>
+                        <span style="font-size:0.8rem; color:var(--text-sub); font-weight:600; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">[${escapeHTML(item.category)}] ${escapeHTML(item.name || '')}</span>
                     </div>
-                `;
-            }).join('');
+                    <div style="display:flex; gap:4px; flex-shrink:0;">
+                        <button class="btn btn-sm btn-primary" style="padding:2px 8px;" onclick="openPrintBarcodeModal('SINGLE', '${escapeHTML(item.sn)}')" title="พิมพ์สติ๊กเกอร์ S/N"><i class="fa-solid fa-print"></i> พิมพ์</button>
+                        <button class="btn btn-sm btn-secondary" style="padding:2px 8px;" onclick="openRelocateModal('${item.id}', '${escapeHTML(item.sn)}', '${escapeHTML(item.name)}', '${escapeHTML(item.location)}')" title="ย้าย"><i class="fa-solid fa-right-left"></i></button>
+                        <button class="btn btn-sm btn-danger" style="padding:2px 8px;" onclick="openDeleteConfirmModal('SINGLE', '${escapeHTML(item.sn)}', '${item.id}')" title="ลบออก"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                </div>
+            `).join('');
 
             card.innerHTML = `
                 <div class="slot-card-header">
-                    <strong class="mono" style="font-size:0.95rem; color:var(--text-main);">📍 ${escapeHTML(formatLocationCode(slotTitle))}</strong>
-                    <span class="mono" style="font-size:0.8rem; font-weight:700; color:var(--success); background:var(--bg-subtle); padding:3px 10px; border-radius:12px; border:1px solid var(--border-color);">
+                    <strong class="mono" style="font-size:0.92rem; color:var(--text-main);">📍 ${escapeHTML(formatLocationCode(slotTitle))}</strong>
+                    <span class="mono" style="font-size:0.78rem; font-weight:700; color:var(--success); background:var(--bg-subtle); padding:2px 8px; border-radius:4px;">
                         ${items.length} เครื่อง
                     </span>
                 </div>
-                <div style="${isDockFull ? 'max-height:550px; display:grid; grid-template-columns:repeat(auto-fill, minmax(360px, 1fr)); gap:10px;' : 'max-height:380px;'} overflow-y:auto; padding-right:4px;">${rowsHtml}</div>
+                <div style="${isDockFull ? 'max-height:550px; display:grid; grid-template-columns:repeat(auto-fill, minmax(360px, 1fr)); gap:8px;' : 'max-height:260px;'} overflow-y:auto;">${rowsHtml}</div>
             `;
             container.appendChild(card);
-        }
-
-        async function saveMeterFromSlotCard(id, sn) {
-            const inputElem = document.getElementById(`slot-meter-input-${id}`);
-            if(!inputElem) return;
-            const val = inputElem.value.trim();
-
-            const item = globalInventoryData.find(i => String(i.id) === String(id) || i.sn === sn);
-            if (item) {
-                item.meter_reading = val !== '' ? parseInt(val) : null;
-            }
-
-            playSuccessSound();
-            speakThaiText(`บันทึกเลขมิเตอร์ ${sn} เรียบร้อยแล้วค่ะ`);
-            showToast(`⏱️ อัปเดตเลขมิเตอร์ S/N: ${sn} เป็น ${val !== '' ? val : 'ไม่ระบุ'} สำเร็จ`);
-
-            await logUserActivity('RELOCATE', `อัปเดตเลขมิเตอร์จากผังคลังเป็น: ${val || 'ว่าง'}`, sn);
-
-            if (navigator.onLine) {
-                await _supabase
-                    .from('warehouse_items')
-                    .update({ meter_reading: val !== '' ? parseInt(val) : null })
-                    .eq('sn', sn);
-            }
         }
 
         function openPrintBarcodeModal(mode = 'SELECTED', singleSn = null) {
@@ -5023,8 +4724,7 @@ date_default_timezone_set('Asia/Bangkok');
                     (i.sn && i.sn.toLowerCase().includes(q)) ||
                     (i.name && i.name.toLowerCase().includes(q)) ||
                     (i.category && i.category.toLowerCase().includes(q)) ||
-                    (i.location && i.location.toLowerCase().includes(q)) ||
-                    (String(i.meter_reading || '').includes(q))
+                    (i.location && i.location.toLowerCase().includes(q))
                 );
             }
 
@@ -5035,9 +4735,9 @@ date_default_timezone_set('Asia/Bangkok');
 
             let excelRows = [
                 ["รายงานสรุปข้อมูลคลังสินค้า - WMS System"],
-                [`วันที่ส่งออกข้อมูล: ${new Date().toLocaleString('th-TH')}`, "", "", "", "", `จำนวนส่งออก: ${exportData.length} รายการ`],
+                [`วันที่ส่งออกข้อมูล: ${new Date().toLocaleString('th-TH')}`, "", "", "", `จำนวนส่งออก: ${exportData.length} รายการ`],
                 [""],
-                ["ลำดับ", "รหัสสินค้า (SKU)", "ชื่อรุ่น / รายละเอียดสินค้า", "ซีเรียลบาร์โค้ด (S/N)", "เลขมิเตอร์เครื่อง", "พิกัดจัดเก็บ (Location)", "จำนวน", "วันเวลารับเข้าคลัง"]
+                ["ลำดับ", "รหัสสินค้า (SKU)", "ชื่อรุ่น / รายละเอียดสินค้า", "ซีเรียลบาร์โค้ด (S/N)", "พิกัดจัดเก็บ (Location)", "จำนวน", "วันเวลารับเข้าคลัง"]
             ];
 
             exportData.forEach((item, idx) => {
@@ -5046,7 +4746,6 @@ date_default_timezone_set('Asia/Bangkok');
                     item.category || '',
                     item.name || '',
                     item.sn || '',
-                    item.meter_reading !== null && item.meter_reading !== undefined ? item.meter_reading : '',
                     formatLocationCode(item.location || 'DOCK'),
                     item.qty ?? 1,
                     item.created_at ? new Date(item.created_at).toLocaleString('th-TH') : ''
@@ -5059,7 +4758,6 @@ date_default_timezone_set('Asia/Bangkok');
                 { wch: 22 },
                 { wch: 38 },
                 { wch: 28 },
-                { wch: 16 },
                 { wch: 20 },
                 { wch: 10 },
                 { wch: 25 }
@@ -5094,8 +4792,7 @@ date_default_timezone_set('Asia/Bangkok');
                                 category: String(row[1] || 'GENERAL').trim(),
                                 name: String(row[2] || 'ไม่ระบุรุ่น').trim(),
                                 sn: String(row[3]).trim(),
-                                meter_reading: row[4] ? parseInt(row[4]) : null,
-                                location: String(row[5] || 'DOCK').trim(),
+                                location: String(row[4] || 'DOCK').trim(),
                                 qty: 1,
                                 unit: "เครื่อง",
                                 created_at: new Date().toISOString()

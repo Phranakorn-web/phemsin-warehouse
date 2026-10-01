@@ -75,35 +75,9 @@ async function loadVoiceSettingsFromDB() {
 
         if (data && data.value) {
             voiceSettings = data.value;
-            const toggleInbound = document.getElementById('voiceToggleInbound');
-            const toggleDelete = document.getElementById('voiceToggleDelete');
-            if (toggleInbound) toggleInbound.checked = !!voiceSettings.inboundVoice;
-            if (toggleDelete) toggleDelete.checked = !!voiceSettings.deleteVoice;
         }
     } catch (e) {
         console.warn('Voice config load warning:', e);
-    }
-}
-
-async function saveVoiceSettingsToDB() {
-    if (!currentUser || currentUser.role !== 'admin') return;
-
-    const toggleInbound = document.getElementById('voiceToggleInbound');
-    const toggleDelete = document.getElementById('voiceToggleDelete');
-
-    voiceSettings.inboundVoice = toggleInbound ? toggleInbound.checked : false;
-    voiceSettings.deleteVoice = toggleDelete ? toggleDelete.checked : false;
-
-    try {
-        const payload = {
-            key: 'voice_config',
-            value: voiceSettings,
-            updated_at: new Date().toISOString()
-        };
-        await _supabase.from('system_settings').upsert(payload, { onConflict: 'key' });
-        showToast("⚡ บันทึกการตั้งค่าเสียงบรรยายลง DB สำเร็จ");
-    } catch (e) {
-        console.error("Save voice settings error:", e);
     }
 }
 
@@ -155,17 +129,22 @@ let currentInspectedUser = null;
 let currentUser = null;
 let isAdminAuthenticatedSession = false;
 let loginFailedAttempts = 0;
-
+let targetPendingGuardView = null;
 let pendingApprovalCallback = null;
 
-const AUTO_LOGOUT_TIMEOUT_MS = 15 * 60 * 1000;
+// FEATURE UPDATE: 5 นาที Auto Logout เมื่อไร้การใช้งานต่อเนื่อง
+const AUTO_LOGOUT_TIMEOUT_MS = 5 * 60 * 1000; 
 let autoLogoutTimer = null;
 
 function resetAutoLogoutTimer() {
     if (!currentUser) return;
+    
+    // อัปเดต Last Active Time ลง localStorage สำหรับตรวจสอบเวลา refresh
+    localStorage.setItem('WMS_LAST_ACTIVE_TIME', Date.now().toString());
+
     clearTimeout(autoLogoutTimer);
     autoLogoutTimer = setTimeout(() => {
-        handleSystemLogout("⏳ คุณไม่ได้ใช้งานเว็บไซต์นานเกิน 15 นาที ระบบจึงออกจากระบบอัตโนมัติ");
+        handleSystemLogout("⏳ คุณไม่ได้ใช้งานเว็บไซต์นานเกิน 5 นาที ระบบจึงออกจากระบบอัตโนมัติเพื่อความปลอดภัย");
     }, AUTO_LOGOUT_TIMEOUT_MS);
 }
 
@@ -205,34 +184,43 @@ async function loadUsersFromDB() {
     populateLogUserDropdown();
 }
 
+// FEATURE UPDATE: ตรวจสอบ Session & Timeout 5 นาทีเมื่อกด Refresh หน้าเว็บ
 async function initAuthSystem() {
     await loadUsersFromDB();
     await loadVoiceSettingsFromDB();
 
-    const activeSession = sessionStorage.getItem('WMS_ACTIVE_USER');
-    if (activeSession) {
-        try {
-            currentUser = JSON.parse(activeSession);
-            const matchedUser = systemUsers.find(u => u.username.toLowerCase() === currentUser.username.toLowerCase());
-            if(matchedUser) currentUser = matchedUser;
+    const savedUserStr = localStorage.getItem('WMS_ACTIVE_USER');
+    const lastActiveTimeStr = localStorage.getItem('WMS_LAST_ACTIVE_TIME');
 
+    if (savedUserStr && lastActiveTimeStr) {
+        const elapsed = Date.now() - parseInt(lastActiveTimeStr, 10);
+        
+        if (elapsed < AUTO_LOGOUT_TIMEOUT_MS) {
+            // อยู่ในเวลา 5 นาที ให้ Login ต่อได้เลย ไม่ต้องกรอกรหัสใหม่
+            currentUser = JSON.parse(savedUserStr);
             document.getElementById('loginOverlay').style.display = 'none';
-            document.getElementById('currentUserNameText').textContent = escapeHTML(`${currentUser.name} (${currentUser.username})`);
+            document.getElementById('currentUserNameText').textContent = `${currentUser.name} (${currentUser.username})`;
+            
             resetAutoLogoutTimer();
             initSecurityListeners();
-        } catch(e) {
-            forceShowLoginOverlay();
+            renderSidebarMenu();
+            showToast(`👋 ยินดีต้อนรับกลับ คุณ ${currentUser.name}`);
+            return;
         }
-    } else {
-        forceShowLoginOverlay();
     }
+
+    // ถ้าเกิน 5 นาที หรือไม่มี Session ให้ขึ้นหน้าล็อกอิน
+    forceShowLoginOverlay();
 }
 
 function forceShowLoginOverlay() {
     currentUser = null;
     isAdminAuthenticatedSession = false;
-    sessionStorage.removeItem('WMS_ACTIVE_USER');
+    localStorage.removeItem('WMS_ACTIVE_USER');
+    localStorage.removeItem('WMS_LAST_ACTIVE_TIME');
     document.getElementById('loginOverlay').style.display = 'flex';
+    document.getElementById('loginUsername').value = '';
+    document.getElementById('loginPassword').value = '';
     document.getElementById('loginUsername').focus();
 }
 
@@ -278,21 +266,25 @@ async function handleSystemLogin(e) {
     if (foundUser) {
         loginFailedAttempts = 0;
         currentUser = foundUser;
-        sessionStorage.setItem('WMS_ACTIVE_USER', JSON.stringify(currentUser));
         
+        // บันทึกลง localStorage สำหรับจำ Session ตอน Refresh
+        localStorage.setItem('WMS_ACTIVE_USER', JSON.stringify(currentUser));
+        localStorage.setItem('WMS_LAST_ACTIVE_TIME', Date.now().toString());
+
         document.getElementById('loginOverlay').style.display = 'none';
         document.getElementById('loginErrorAlert').style.display = 'none';
-        document.getElementById('currentUserNameText').textContent = escapeHTML(`${currentUser.name} (${currentUser.username})`);
+        document.getElementById('currentUserNameText').textContent = `${currentUser.name} (${currentUser.username})`;
         
         document.getElementById('loginUsername').value = '';
         document.getElementById('loginPassword').value = '';
 
         resetAutoLogoutTimer();
         initSecurityListeners();
+        renderSidebarMenu();
         playSuccessSound();
         
         speakThaiText(`ยินดีต้อนรับ คุณ ${currentUser.name}`);
-        showToast(`🎉 ยืนยันสิทธิ์สำเร็จ! ยินดีต้อนรับคุณ ${escapeHTML(currentUser.name)}`);
+        showToast(`🎉 ยืนยันสิทธิ์สำเร็จ! ยินดีต้อนรับคุณ ${currentUser.name}`);
 
         await logUserActivity('AUTH', `เข้าสู่ระบบสำเร็จ`);
     } else {
@@ -319,7 +311,8 @@ async function handleSystemLogout(reasonMsg = null) {
         if (currentUser) {
             await logUserActivity('AUTH', `ออกจากระบบ ${reasonMsg ? '(Auto Timeout)' : ''}`);
         }
-        sessionStorage.removeItem('WMS_ACTIVE_USER');
+        localStorage.removeItem('WMS_ACTIVE_USER');
+        localStorage.removeItem('WMS_LAST_ACTIVE_TIME');
         currentUser = null;
         isAdminAuthenticatedSession = false;
         clearTimeout(autoLogoutTimer);
@@ -358,12 +351,11 @@ function closeAdminApprovalModal() {
 function verifyAdminApprovalPassword(e) {
     e.preventDefault();
     const inputPass = document.getElementById('adminApprovalPasswordInput').value;
-
     const adminUser = systemUsers.find(u => u.role === 'admin' && u.password === inputPass);
 
     if (adminUser) {
         playSuccessSound();
-        showToast(`🔓 อนุมัติการทำรายการโดย Admin: ${escapeHTML(adminUser.name)}`);
+        showToast(`🔓 อนุมัติการทำรายการโดย Admin: ${adminUser.name}`);
         closeAdminApprovalModal();
         if (typeof pendingApprovalCallback === 'function') {
             pendingApprovalCallback();
@@ -382,6 +374,7 @@ let recentInboundList = [];
 let recentOutboundOrders = [];
 let outboundCartItems = [];
 let occupiedLocationsSet = new Set();
+let pendingApprovalsList = [];
 
 let pendingDeleteMode = null;
 let pendingDeleteSn = null;
@@ -398,19 +391,38 @@ let aisleConfigs = {
 let masterAisles = [...defaultMasterAisles];
 
 let selectedItemSnSet = new Set();
-
 let currentSelectedAisle = 'A';
 let currentSelectedBay = '01';
 
-// LATEST TAB ORDER: เช็คสต็อก, รับสินค้า, จ่ายสินค้า, ตำแหน่ง, ดูประวัติ, ตั้งค่าพิกัด
-let menuConfig = [
-    { id: 'view-inventory', label: 'เช็คสต็อกสินค้า', icon: 'fa-list-check' },
-    { id: 'view-inbound', label: 'รับสินค้าเข้าคลัง (Fast)', icon: 'fa-arrow-right-to-bracket' },
-    { id: 'view-outbound', label: 'จ่ายสินค้าออกจากคลัง', icon: 'fa-truck-arrow-right' },
-    { id: 'view-locations', label: 'ผังตำแหน่งคลังสินค้า (Drill-Down)', icon: 'fa-map-location-dot' },
-    { id: 'view-activities', label: 'ดูประวัติการใช้งาน (User Logs)', icon: 'fa-clock-rotate-left' },
-    { id: 'view-settings', label: 'ตั้งค่าพิกัดคลังสินค้า', icon: 'fa-gears' }
-];
+// LATEST TAB ORDER WITH APPROVAL CENTER FOR ADMIN
+function renderSidebarMenu() {
+    let menuConfig = [
+        { id: 'view-inventory', label: 'เช็คสต็อกสินค้า', icon: 'fa-list-check' },
+        { id: 'view-inbound', label: 'รับสินค้าเข้าคลัง (Fast)', icon: 'fa-arrow-right-to-bracket' },
+        { id: 'view-outbound', label: 'จ่ายสินค้าออกจากคลัง', icon: 'fa-truck-arrow-right' },
+        { id: 'view-locations', label: 'ผังตำแหน่งคลังสินค้า (Drill-Down)', icon: 'fa-map-location-dot' }
+    ];
+
+    if (currentUser && currentUser.role === 'admin') {
+        menuConfig.push({ id: 'view-approvals', label: 'ศูนย์อนุมัติคำขอ (Approvals)', icon: 'fa-clipboard-check' });
+        menuConfig.push({ id: 'view-activities', label: 'ดูประวัติการใช้งาน (User Logs)', icon: 'fa-clock-rotate-left' });
+        menuConfig.push({ id: 'view-settings', label: 'ตั้งค่าพิกัดคลังสินค้า', icon: 'fa-gears' });
+    }
+
+    const list = document.getElementById('sidebarMenuList');
+    list.innerHTML = '';
+    
+    menuConfig.forEach((item, idx) => {
+        const li = document.createElement('li');
+        li.className = 'menu-item';
+        li.innerHTML = `
+            <button class="${idx === 0 ? 'active' : ''}" onclick="switchView('${item.id}')">
+                <i class="fa-solid ${item.icon}"></i> ${item.label}
+            </button>
+        `;
+        list.appendChild(li);
+    });
+}
 
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
@@ -418,7 +430,6 @@ function playSuccessSound() {
     try {
         if (audioCtx.state === 'suspended') audioCtx.resume();
         const now = audioCtx.currentTime;
-
         const osc1 = audioCtx.createOscillator();
         const gain1 = audioCtx.createGain();
         osc1.type = 'sine';
@@ -436,7 +447,6 @@ function playErrorSound() {
     try {
         if (audioCtx.state === 'suspended') audioCtx.resume();
         const now = audioCtx.currentTime;
-
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         osc.type = 'sawtooth';
@@ -453,7 +463,6 @@ function playErrorSound() {
 document.addEventListener('DOMContentLoaded', async () => {
     initThemeSystem();
     await initAuthSystem();
-    renderSidebarMenu();
     await loadWarehouseConfigsFromDB();
     await loadDataFromDatabase();
     await loadOutboundHistoryFromDB();
@@ -462,23 +471,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     onInboundAisleOrBayChange();
 });
 
-function renderSidebarMenu() {
-    const list = document.getElementById('sidebarMenuList');
-    list.innerHTML = '';
-    
-    menuConfig.forEach((item, idx) => {
-        const li = document.createElement('li');
-        li.className = 'menu-item';
-        li.innerHTML = `
-            <button class="${idx === 0 ? 'active' : ''}" onclick="switchView('${escapeHTML(item.id)}')">
-                <i class="fa-solid ${escapeHTML(item.icon)}"></i> ${escapeHTML(item.label)}
-            </button>
-        `;
-        list.appendChild(li);
-    });
-}
-
-// MOVE AISLE POSITION UP / DOWN
 function moveAisleOrder(index, direction) {
     if (direction === 'UP' && index > 0) {
         const temp = masterAisles[index];
@@ -495,7 +487,7 @@ function moveAisleOrder(index, direction) {
 }
 
 function switchView(viewId) {
-    if (viewId === 'view-settings' || viewId === 'view-activities') {
+    if (viewId === 'view-settings' || viewId === 'view-activities' || viewId === 'view-approvals') {
         if (!currentUser || currentUser.role !== 'admin') {
             playErrorSound();
             alert("⛔ ปฏิเสธการเข้าถึง: หน้านี้สงวนสิทธิ์เฉพาะผู้ดูแลระบบ (Admin) เท่านั้น!");
@@ -503,7 +495,9 @@ function switchView(viewId) {
         }
 
         if (!isAdminAuthenticatedSession) {
-            document.getElementById('adminGuardAccountName').textContent = escapeHTML(`${currentUser.name} (${currentUser.username})`);
+            targetPendingGuardView = viewId;
+            document.getElementById('adminGuardTargetView').value = viewId;
+            document.getElementById('adminGuardAccountName').textContent = `${currentUser.name} (${currentUser.username})`;
             document.getElementById('adminGuardModal').style.display = 'flex';
             document.getElementById('adminGuardPasswordInput').value = '';
             document.getElementById('adminGuardPasswordInput').focus();
@@ -516,11 +510,13 @@ function switchView(viewId) {
 function verifyAdminGuardPassword(e) {
     e.preventDefault();
     const pass = document.getElementById('adminGuardPasswordInput').value;
+    const targetView = document.getElementById('adminGuardTargetView').value || targetPendingGuardView || 'view-settings';
+
     if (currentUser && currentUser.password === pass) {
         isAdminAuthenticatedSession = true;
         closeAdminGuardModal();
         showToast("🔓 ยืนยันสิทธิ์ผู้ดูแลระบบสำเร็จ");
-        executeSwitchView(document.querySelector('.menu-item button.active').getAttribute('onclick').match(/'([^']+)'/)[1] || 'view-settings');
+        executeSwitchView(targetView);
     } else {
         playErrorSound();
         alert("❌ รหัสผ่านไม่ถูกต้อง!");
@@ -529,6 +525,7 @@ function verifyAdminGuardPassword(e) {
 
 function closeAdminGuardModal() {
     document.getElementById('adminGuardModal').style.display = 'none';
+    targetPendingGuardView = null;
 }
 
 async function executeSwitchView(viewId) {
@@ -538,18 +535,15 @@ async function executeSwitchView(viewId) {
     const activeBtn = Array.from(document.querySelectorAll('.menu-item button')).find(b => b.getAttribute('onclick').includes(viewId));
     if(activeBtn) activeBtn.classList.add('active');
 
-    document.getElementById(viewId).classList.add('active');
-
-    const itemConfig = menuConfig.find(m => m.id === viewId);
-    if(itemConfig) {
-        document.getElementById('navTitleText').innerHTML = `<i class="fa-solid ${escapeHTML(itemConfig.icon)}" style="color:var(--primary);"></i> ${escapeHTML(itemConfig.label)}`;
-        await logUserActivity('NAVIGATION', `กดเข้าดูหน้าเมนู: ${itemConfig.label}`);
-    }
+    const targetSec = document.getElementById(viewId);
+    if(targetSec) targetSec.classList.add('active');
 
     if(viewId === 'view-locations') {
         renderDrillDownAisleBar();
         renderDrillDownBaysGrid();
         renderDrillDownSlotsGrid();
+    } else if(viewId === 'view-approvals') {
+        loadPendingApprovalsFromDB();
     } else if(viewId === 'view-activities') {
         loadUserActivityLogsFromDB();
     } else if(viewId === 'view-settings') {
@@ -568,7 +562,7 @@ function showToast(msg, isError = false) {
     setTimeout(() => toast.classList.remove('show'), 3500);
 }
 
-// FETCH ALL WAREHOUSE ITEMS WITH PAGINATION (SUPPORT 2,000+ ITEMS)
+// FETCH ALL WAREHOUSE ITEMS WITH PAGINATION
 async function fetchAllWarehouseItems() {
     let allData = [];
     let from = 0;
@@ -595,7 +589,6 @@ async function fetchAllWarehouseItems() {
     return allData;
 }
 
-// FETCH ALL MASTER PRODUCTS WITH PAGINATION (>1,000 & 2,000+ ITEMS)
 async function loadMasterProductsFromDB() {
     try {
         let allProducts = [];
@@ -623,7 +616,6 @@ async function loadMasterProductsFromDB() {
         if (allProducts.length > 0) {
             globalMasterProducts = allProducts;
         } else {
-            // Fallback from warehouse_items
             const productMap = new Map();
             globalInventoryData.forEach(item => {
                 if (item.category && !productMap.has(item.category)) {
@@ -652,6 +644,7 @@ async function loadDataFromDatabase() {
         });
 
         await loadMasterProductsFromDB();
+        await loadWarehouseConfigsFromDB(); // REALTIME AISLE DB SYNC
 
         statusText.textContent = `DB Online (สต็อก: ${globalInventoryData.length.toLocaleString()})`;
 
@@ -805,6 +798,11 @@ function openEditItemModal(id, sn) {
     const item = globalInventoryData.find(i => String(i.id) === String(id) || i.sn === sn);
     if (!item) return;
 
+    if (currentUser.role === 'user') {
+        showPendingNoticeModal(`คำขอแก้ไขข้อมูล S/N: ${sn}`, "การแก้ไขข้อมูลสินค้าจำเป็นต้องได้รับการอนุมัติจากผู้ดูแลระบบก่อนดำเนินการ");
+        return;
+    }
+
     requireAdminApproval(`แก้ไขข้อมูลสินค้า S/N: ${sn}`, () => {
         document.getElementById('editItemId').value = item.id;
         document.getElementById('editItemSn').value = item.sn;
@@ -852,7 +850,13 @@ async function submitEditItemForm(e) {
     }
 }
 
+// FEATURE UPDATE: User ทั่วไปย้าย หรือ ลบ ต้องเข้า Approval Queue เสมอ
 function requestRelocateModal(id, sn, name, currentLoc) {
+    if (currentUser.role === 'user') {
+        createPendingApprovalRequest('RELOCATE', `ย้ายพิกัด S/N: ${sn} จาก ${currentLoc}`, [sn], { id, sn, name, currentLoc });
+        return;
+    }
+
     requireAdminApproval(`ย้ายพิกัดจัดเก็บ S/N: ${sn}`, () => {
         openRelocateModal(id, sn, name, currentLoc);
     });
@@ -861,6 +865,12 @@ function requestRelocateModal(id, sn, name, currentLoc) {
 function requestBatchRelocateModal() {
     if (selectedItemSnSet.size === 0) {
         alert("⚠️ กรุณาเลือกรายการสินค้าที่ต้องการย้ายอย่างน้อย 1 รายการ");
+        return;
+    }
+
+    if (currentUser.role === 'user') {
+        const snList = Array.from(selectedItemSnSet);
+        createPendingApprovalRequest('RELOCATE_BATCH', `ขอย้ายสินค้าเป็นกลุ่มจำนวน ${snList.length} รายการ`, snList, { snList });
         return;
     }
 
@@ -909,6 +919,16 @@ async function submitRelocateLocation() {
 }
 
 function requestDeleteModal(mode, sn = null, id = null) {
+    if (currentUser.role === 'user') {
+        const snList = mode === 'SINGLE' ? [sn] : Array.from(selectedItemSnSet);
+        if (snList.length === 0) {
+            alert("⚠️ กรุณาเลือกรายการที่ต้องการลบอย่างน้อย 1 รายการ");
+            return;
+        }
+        createPendingApprovalRequest('DELETE', `ขอลบสินค้าออกจากคลังจำนวน ${snList.length} รายการ`, snList, { mode, sn, id, snList });
+        return;
+    }
+
     requireAdminApproval(`ลบสินค้าออกจากคลัง ${mode === 'SINGLE' ? 'S/N: ' + sn : 'จำนวน ' + selectedItemSnSet.size + ' รายการ'}`, () => {
         openDeleteConfirmModal(mode, sn, id);
     });
@@ -969,7 +989,7 @@ async function executeDeleteAction() {
         updateSelectedCountUI();
 
         playSuccessSound();
-        showToast(`🗑️ ลบรายการสินค้าจำนวน ${snArray.length} รายการ เรียบร้อย`);
+        showToast(`🗑 ลบรายการสินค้าจำนวน ${snArray.length} รายการ เรียบร้อย`);
 
         filterInventoryData();
         updateKPIs();
@@ -982,6 +1002,117 @@ async function executeDeleteAction() {
             await _supabase.from('warehouse_items').delete().in('sn', snArray);
         }
     }
+}
+
+// --- APPROVAL QUEUE ENGINE FOR USER REQUESTS ---
+async function createPendingApprovalRequest(type, desc, targetSns, payloadData) {
+    const requestPayload = {
+        requester_username: currentUser.username,
+        requester_name: currentUser.name,
+        request_type: type,
+        description: desc,
+        target_sns: targetSns,
+        payload: payloadData,
+        status: 'PENDING',
+        created_at: new Date().toISOString()
+    };
+
+    try {
+        await _supabase.from('approval_requests').insert([requestPayload]);
+        showPendingNoticeModal(desc, `คำขอถูกส่งไปยังผู้ดูแลระบบเรียบร้อยแล้ว โปรดรอผู้ดูแลระบบอนุมัติคำขอให้ก่อนดำเนินการต่อ`);
+        await logUserActivity('APPROVAL_REQ', `ส่งคำขอรออนุมัติ: ${desc}`);
+    } catch(e) {
+        alert("⚠️ ไม่สามารถส่งคำขออนุมัติได้ในขณะนี้");
+    }
+}
+
+function showPendingNoticeModal(title, detail) {
+    document.getElementById('pendingNoticeDetails').innerHTML = `
+        <div style="font-weight:700; color:var(--primary-text); margin-bottom:4px;">${title}</div>
+        <div>${detail}</div>
+    `;
+    document.getElementById('pendingApprovalNoticeModal').style.display = 'flex';
+}
+
+function closePendingNoticeModal() {
+    document.getElementById('pendingApprovalNoticeModal').style.display = 'none';
+}
+
+async function loadPendingApprovalsFromDB() {
+    const tbody = document.getElementById('approvalsTableBody');
+    if (!tbody) return;
+
+    try {
+        const { data, error } = await _supabase
+            .from('approval_requests')
+            .select('*')
+            .eq('status', 'PENDING')
+            .order('created_at', { ascending: false });
+
+        if (!error && data) {
+            pendingApprovalsList = data;
+            renderApprovalsTable(data);
+        } else {
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">ไม่มีรายการคำขอที่รออนุมัติในขณะนี้</td></tr>`;
+        }
+    } catch(e) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--danger);">ไม่สามารถดึงข้อมูลคำขอได้</td></tr>`;
+    }
+}
+
+function renderApprovalsTable(approvals) {
+    const tbody = document.getElementById('approvalsTableBody');
+    if (approvals.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">ไม่มีรายการคำขอที่รออนุมัติในขณะนี้</td></tr>`;
+        return;
+    }
+
+    let html = '';
+    approvals.forEach((item, idx) => {
+        html += `
+            <tr>
+                <td style="text-align:center;" class="mono">${idx + 1}</td>
+                <td style="font-size:0.78rem; color:var(--text-muted);">${new Date(item.created_at).toLocaleString('th-TH')}</td>
+                <td><strong>${escapeHTML(item.requester_name)}</strong> <br><small class="mono">(${escapeHTML(item.requester_username)})</small></td>
+                <td><span class="badge-action delete">${item.request_type}</span></td>
+                <td>${escapeHTML(item.description)}</td>
+                <td><code class="mono font-bold">${(item.target_sns || []).join(', ')}</code></td>
+                <td style="text-align:center;">
+                    <button class="btn btn-sm btn-success" onclick="approveUserRequest('${item.id}')"><i class="fa-solid fa-check"></i> อนุมัติ</button>
+                    <button class="btn btn-sm btn-danger" onclick="rejectUserRequest('${item.id}')"><i class="fa-solid fa-xmark"></i> ไม่อนุมัติ</button>
+                </td>
+            </tr>
+        `;
+    });
+    tbody.innerHTML = html;
+}
+
+async function approveUserRequest(id) {
+    const req = pendingApprovalsList.find(r => String(r.id) === String(id));
+    if (!req) return;
+
+    if (req.request_type === 'DELETE') {
+        await _supabase.from('warehouse_items').delete().in('sn', req.target_sns);
+    } else if (req.request_type === 'OUTBOUND') {
+        const { destination, dispatcher, receiver, snList } = req.payload;
+        await _supabase.from('warehouse_items').delete().in('sn', snList);
+        await _supabase.from('outbound_orders').insert([{
+            destination, dispatcher, receiver, sn_list: snList, items_count: snList.length, created_at: new Date().toISOString()
+        }]);
+    }
+
+    await _supabase.from('approval_requests').update({ status: 'APPROVED', approved_by: currentUser.username }).eq('id', id);
+    showToast(`✅ อนุมัติคำขอของ ${req.requester_name} เรียบร้อยแล้ว`);
+    
+    await logUserActivity('APPROVAL_EXEC', `อนุมัติคำขอ: ${req.description} ของผู้ใช้ ${req.requester_username}`);
+    await loadPendingApprovalsFromDB();
+    await loadDataFromDatabase();
+}
+
+async function rejectUserRequest(id) {
+    await _supabase.from('approval_requests').update({ status: 'REJECTED', approved_by: currentUser.username }).eq('id', id);
+    showToast(`⛔ ปฏิเสธคำขอเรียบร้อยแล้ว`);
+    await loadPendingApprovalsFromDB();
 }
 
 // --- FAST INBOUND ENGINE ---
@@ -1074,7 +1205,6 @@ function renderLiveInboundFeed() {
     container.innerHTML = html;
 }
 
-// AUTOCOMPLETE FIX: UNIQUE SKU ONLY (DEDUPLICATED LIST)
 function onSkuSearchInput(val) {
     const box = document.getElementById('skuSuggestionsBox');
     if (!val.trim()) {
@@ -1141,7 +1271,7 @@ function handleAddOutboundToCart(e) {
 
     if(outboundCartItems.some(i => i.sn.toLowerCase() === sn.toLowerCase())) {
         playErrorSound();
-        showToast(`⚠️️ S/N "${sn}" มีอยู่ในรายการตัดจ่ายแล้ว`, true);
+        showToast(`⚠ S/N "${sn}" มีอยู่ในรายการตัดจ่ายแล้ว`, true);
         snInput.select();
         return;
     }
@@ -1189,7 +1319,7 @@ function removeFromOutboundCart(sn) {
 
 function requestOutboundApproval() {
     if(outboundCartItems.length === 0) {
-        alert("⚠️ กรุณายิงสแกน S/N สินค้าอย่างน้อย 1 รายการเพื่อตัดจ่าย");
+        alert("⚠️️ กรุณายิงสแกน S/N สินค้าอย่างน้อย 1 รายการเพื่อตัดจ่าย");
         return;
     }
 
@@ -1202,7 +1332,17 @@ function requestOutboundApproval() {
         return;
     }
 
-    requireAdminApproval(`อนุมัติตัดจ่ายสินค้าออกจากคลังจำนวน ${outboundCartItems.length} รายการ ไปยัง: ${dest}`, () => {
+    if (currentUser.role === 'user') {
+        const snList = outboundCartItems.map(i => i.sn);
+        createPendingApprovalRequest('OUTBOUND', `ตัดจ่ายสินค้าออกจากคลังไปยัง: ${dest} (${snList.length} รายการ)`, snList, {
+            destination: dest, dispatcher: dispatcher, receiver: receiver, snList: snList
+        });
+        outboundCartItems = [];
+        renderOutboundCartTable();
+        return;
+    }
+
+    requireAdminApproval(`ตัดจ่ายสินค้าออกจากคลังจำนวน ${outboundCartItems.length} รายการ ไปยัง: ${dest}`, () => {
         processFinalOutboundWorkOrder();
     });
 }
@@ -1283,7 +1423,7 @@ async function loadOutboundHistoryFromDB() {
     }
 }
 
-// --- DRILL-DOWN LOCATION VISUALIZER ---
+// --- DRILL-DOWN LOCATION VISUALIZER (REALTIME DB SYNC) ---
 function renderDrillDownAisleBar() {
     const bar = document.getElementById('aisleFilterBar');
     bar.innerHTML = '';
@@ -1412,6 +1552,7 @@ function renderSlotCard(container, slotTitle, items, isDockFull = false) {
 
 function refreshLocationVisualizerIfActive() {
     if(document.getElementById('view-locations').classList.contains('active')) {
+        renderDrillDownAisleBar();
         renderDrillDownBaysGrid();
         renderDrillDownSlotsGrid();
     }
@@ -1589,7 +1730,7 @@ function closeUserHistoryAuditModal() {
     currentInspectedUser = null;
 }
 
-// --- WAREHOUSE CONFIGS & USER MANAGEMENT ---
+// --- WAREHOUSE CONFIGS & USER MANAGEMENT (REALTIME DB SYNC) ---
 async function loadWarehouseConfigsFromDB() {
     try {
         const { data, error } = await _supabase
@@ -1618,7 +1759,7 @@ async function saveAllWarehouseConfigsToDB() {
             updated_at: new Date().toISOString()
         };
         await _supabase.from('system_settings').upsert(payload, { onConflict: 'key' });
-        showToast("⚡ บันทึกโครงสร้างพิกัดคลังสินค้าลง DB สำเร็จ");
+        showToast("⚡ บันทึกโครงสร้างพิกัดคลังสินค้าลง DB เรียบร้อยแล้ว");
     } catch(e) {
         alert("❌ ไม่สามารถบันทึกข้อมูลลง DB ได้");
     }
@@ -1799,7 +1940,7 @@ async function deleteUserAccount(id) {
     }
 }
 
-// --- BARCODE PRINT STICKER ENGINE (A4 EQUAL GRID 2x2 & 1 S/N PER THERMAL PAGE) ---
+// --- BARCODE PRINT STICKER ENGINE (THERMAL & PALLET NO-OVERFLOW PERFECT FIT) ---
 function openPrintBarcodeModal(mode, singleSn = null) {
     if (mode === 'SINGLE' && singleSn) {
         selectedItemSnSet.clear();
@@ -1823,10 +1964,15 @@ function closePrintBarcodeModal() {
 function updatePrintPreviewLayout() {
     const area = document.getElementById('barcodePreviewArea');
     const sizeFormat = document.getElementById('thermalSizeSelect').value;
+    const countBadge = document.getElementById('printPreviewCountBadge');
     area.innerHTML = '';
 
     const selectedSnArray = Array.from(selectedItemSnSet);
     const selectedItems = globalInventoryData.filter(i => selectedSnArray.includes(i.sn));
+
+    if (countBadge) {
+        countBadge.textContent = `จำนวน ${selectedItems.length.toLocaleString()} ใบ`;
+    }
 
     if (selectedItems.length === 0) {
         area.innerHTML = '<div style="color:var(--text-muted); text-align:center; padding:20px;">ไม่พบรายการที่เลือก</div>';
@@ -1846,14 +1992,14 @@ function updatePrintPreviewLayout() {
         const svgId = `barcode-svg-element-${idx}`;
 
         cardBox.innerHTML = `
-            <div style="font-weight:800; font-size:0.8rem; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; border-bottom:1px solid #000; padding-bottom:2px; margin-bottom:2px;">
+            <div style="font-weight:800; font-size:0.75rem; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; border-bottom:1px solid #000; padding-bottom:1px; margin-bottom:1px; line-height:1.1;">
                 ${escapeHTML(item.name || 'WMS Item')}
             </div>
-            <div style="font-size:0.75rem; font-weight:700; color:#333;">SKU: ${escapeHTML(item.category || '-')}</div>
-            <div class="barcode-svg-container">
-                <svg id="${svgId}"></svg>
+            <div style="font-size:0.68rem; font-weight:700; color:#222; margin-bottom:1px;">SKU: ${escapeHTML(item.category || '-')}</div>
+            <div class="barcode-svg-container" style="display:flex; justify-content:center; align-items:center; width:100%; max-height:55%; overflow:hidden;">
+                <svg id="${svgId}" style="max-width:100%; height:auto;"></svg>
             </div>
-            <div style="font-size:0.7rem; font-weight:700; display:flex; justify-content:space-between; margin-top:2px; border-top:1px dashed #666; padding-top:2px;">
+            <div style="font-size:0.65rem; font-weight:700; display:flex; justify-content:space-between; margin-top:1px; border-top:1px dashed #444; padding-top:1px;">
                 <span>LOC: ${escapeHTML(formatLocationCode(item.location))}</span>
                 <span>METER: ${Number(item.meter || 0).toLocaleString()}</span>
             </div>
@@ -1864,12 +2010,12 @@ function updatePrintPreviewLayout() {
             try {
                 JsBarcode(`#${svgId}`, item.sn, {
                     format: "CODE128",
-                    width: 1.6,
-                    height: 40,
+                    width: (sizeFormat === '40x30') ? 1.2 : 1.5,
+                    height: (sizeFormat === '40x30' || sizeFormat === '50x30') ? 28 : 45,
                     displayValue: true,
-                    fontSize: 12,
+                    fontSize: 10,
                     font: "JetBrains Mono",
-                    margin: 2
+                    margin: 0
                 });
             } catch (e) {
                 console.error("JsBarcode generation error:", e);
@@ -1883,21 +2029,40 @@ function triggerPDFPrintPreview() {
     const sizeFormat = document.getElementById('thermalSizeSelect').value;
     const printWindow = window.open('', '_blank', 'width=950,height=750');
 
-    let pageStyle = `
-        @page { size: A4 portrait; margin: 8mm; }
-        body { font-family: 'Prompt', sans-serif; background: #fff; color: #000; margin: 0; padding: 0; }
-        .thermal-label-container { display: flex; flex-wrap: wrap; gap: 0; justify-content: space-between; }
-        .barcode-card-box { border: 2px solid #000; border-radius: 4px; padding: 6px; box-sizing: border-box; text-align: center; }
-        .thermal-card-a4-grid { width: 48.5% !important; height: 135px !important; margin-bottom: 8px !important; page-break-inside: avoid !important; float: left; }
-        .barcode-svg-container svg { max-width: 100%; height: auto; }
-    `;
+    let pageStyle = '';
 
-    if (sizeFormat !== 'A4') {
+    if (sizeFormat === 'A4') {
+        pageStyle = `
+            @page { size: A4 portrait; margin: 8mm; }
+            body { font-family: 'Prompt', sans-serif; background: #fff; color: #000; margin: 0; padding: 0; }
+            .thermal-label-container { display: flex; flex-wrap: wrap; gap: 0; justify-content: space-between; width: 100%; }
+            .barcode-card-box { border: 2px solid #000; border-radius: 4px; padding: 6px; box-sizing: border-box; text-align: center; }
+            .thermal-card-a4-grid { width: 48.5% !important; height: 135px !important; margin-bottom: 8px !important; page-break-inside: avoid !important; float: left; }
+            .barcode-svg-container svg { max-width: 100%; height: auto; }
+        `;
+    } else {
         pageStyle = `
             @page { size: auto; margin: 0mm; }
-            body { font-family: 'Prompt', sans-serif; background: #fff; color: #000; margin: 0; padding: 0; }
-            .barcode-card-box { page-break-after: always !important; margin: 0 auto !important; page-break-inside: avoid !important; }
-            .barcode-svg-container svg { max-width: 100%; height: auto; }
+            body { font-family: 'Prompt', sans-serif; background: #fff; color: #000; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; }
+            .thermal-label-container { display: flex; flex-direction: column; align-items: center; gap: 0; width: 100%; }
+            .barcode-card-box { 
+                border: 2px solid #000 !important; 
+                border-radius: 4px !important; 
+                padding: 4px !important; 
+                box-sizing: border-box !important; 
+                text-align: center !important;
+                page-break-after: always !important; 
+                page-break-inside: avoid !important;
+                margin: 0 auto !important;
+                background: #fff !important;
+                overflow: hidden !important;
+            }
+            .thermal-card-50x30 { width: 50mm; height: 30mm; }
+            .thermal-card-40x30 { width: 40mm; height: 30mm; }
+            .thermal-card-100x75 { width: 100mm; height: 75mm; }
+            .thermal-card-100x150 { width: 100mm; height: 150mm; }
+            .barcode-svg-container { display: flex; justify-content: center; align-items: center; width: 100%; max-height: 55%; overflow: hidden; }
+            .barcode-svg-container svg { max-width: 100% !important; height: auto !important; }
         `;
     }
 
@@ -1950,7 +2115,7 @@ async function submitChangePassword(e) {
     }
 
     currentUser.password = newP;
-    sessionStorage.setItem('WMS_ACTIVE_USER', JSON.stringify(currentUser));
+    localStorage.setItem('WMS_ACTIVE_USER', JSON.stringify(currentUser));
     
     const matchedUser = systemUsers.find(u => u.username === currentUser.username);
     if (matchedUser) matchedUser.password = newP;
@@ -2168,6 +2333,11 @@ function initRealtimeSubscription() {
         .on('postgres_changes', { event: '*', schema: 'public', table: 'warehouse_items' }, payload => {
             loadDataFromDatabase();
         })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'approval_requests' }, payload => {
+            if (currentUser && currentUser.role === 'admin') {
+                loadPendingApprovalsFromDB();
+            }
+        })
         .subscribe();
 }
 
@@ -2246,7 +2416,6 @@ function onExportScopeChange(val) {
     else group.style.display = 'none';
 }
 
-// EXCEL EXPORT WITH PERFECT COLUMN WIDTHS
 function executeExcelExport() {
     const scope = document.getElementById('exportScopeSelect').value;
     let exportData = [];
@@ -2284,7 +2453,6 @@ function executeExcelExport() {
 
     const worksheet = XLSX.utils.json_to_sheet(formattedRows);
 
-    // Auto Column Width Calculation
     const columnWidths = [
         { wch: 8 },   // ลำดับ
         { wch: 22 },  // รหัสสินค้า

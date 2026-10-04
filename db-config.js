@@ -8,7 +8,8 @@ const SUPABASE_CONFIG = {
 };
 
 const _supabase = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.key, {
-    auth: { persistSession: false }
+    auth: { persistSession: false },
+    global: { headers: { 'x-client-info': 'wms-master-app' } }
 });
 
 const QUEUE_KEY = 'WMS_OFFLINE_INBOUND_QUEUE';
@@ -244,7 +245,11 @@ function updateDBConnectionStatus(isConnected, message = "") {
     const nowStr = new Date().toLocaleTimeString('th-TH');
 
     if (!navigator.onLine) {
-        updateOnlineOfflineUI(false);
+        if (statusElem) {
+            statusElem.textContent = `📴 ออฟไลน์ (Offline Mode)`;
+            statusElem.style.color = 'var(--warning, #f59e0b)';
+        }
+        if (badgeElem) badgeElem.className = 'status-badge warning';
         return;
     }
 
@@ -268,13 +273,13 @@ async function testDatabaseConnectionRealtime() {
 
     const startTime = performance.now();
     try {
-        const { data, error } = await _supabase.from('warehouse_items').select('id', { count: 'exact', head: true });
+        const { data, error } = await _supabase.from('warehouse_items').select('id').limit(1);
         const endTime = performance.now();
         const latency = Math.round(endTime - startTime);
 
         if (!error) {
-            playSuccessSound();
-            showToast(`⚡ เชื่อมต่อ Supabase สำเร็จ! (Latency: ${latency} ms)`);
+            if (typeof playSuccessSound === 'function') playSuccessSound();
+            if (typeof showToast === 'function') showToast(`⚡ เชื่อมต่อ Supabase สำเร็จ! (Latency: ${latency} ms)`);
             updateDBConnectionStatus(true, `(Ping: ${latency}ms)`);
             if (btn) btn.innerHTML = `<i class="fa-solid fa-plug-circle-check"></i> ทดสอบการเชื่อมต่อ Realtime 100%`;
             return true;
@@ -282,8 +287,8 @@ async function testDatabaseConnectionRealtime() {
             throw error;
         }
     } catch (err) {
-        playErrorSound();
-        showToast(`❌ ทดสอบล้มเหลว: ${err.message}`, true);
+        if (typeof playErrorSound === 'function') playErrorSound();
+        if (typeof showToast === 'function') showToast(`❌ การเชื่อมต่อขัดข้อง: ${err.message}`, true);
         updateDBConnectionStatus(false, `(${err.message})`);
         if (btn) btn.innerHTML = `<i class="fa-solid fa-plug-circle-xmark"></i> ทดสอบเชื่อมต่ออีกครั้ง`;
         return false;

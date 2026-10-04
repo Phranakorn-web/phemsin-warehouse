@@ -96,7 +96,7 @@ function renderDrillDownSlotsGrid() {
     const activeKeys = Object.keys(slotMap);
 
     if(activeKeys.length === 0) {
-        container.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:30px; color:var(--text-muted);">ไม่มีสินค้าจัดเก็บในล็อก ${currentSelectedBay}</div>`;
+        container.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:30px; color:var(--text-muted);">ไม่มีสินค้าจัดเก็บในแถว ${currentSelectedAisle} / ล็อก ${currentSelectedBay} (ยอดคงเหลือ 0 เครื่อง)</div>`;
         return;
     }
 

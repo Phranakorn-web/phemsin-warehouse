@@ -184,6 +184,7 @@ function renderLiveInboundFeed() {
     container.innerHTML = html;
 }
 
+// 🟢 ค้นหาด่วนรหัสสินค้า SKU ค้นหาจาก Master Products ทั้งหมดในฐานข้อมูล DB 100%
 function onSkuSearchInput(val) {
     const box = document.getElementById('skuSuggestionsBox');
     if (!box) return;
@@ -197,8 +198,8 @@ function onSkuSearchInput(val) {
     const skuMap = new Map();
 
     globalMasterProducts.concat(globalInventoryData).forEach(item => {
-        const skuKey = (item.category || item.sku || '').trim();
-        const nameVal = (item.name || '').trim();
+        const skuKey = (item.sku || item.category || '').trim();
+        const nameVal = (item.name || item.description || '').trim();
 
         if (skuKey && !skuMap.has(skuKey.toLowerCase())) {
             if (skuKey.toLowerCase().includes(query) || nameVal.toLowerCase().includes(query)) {
@@ -207,10 +208,10 @@ function onSkuSearchInput(val) {
         }
     });
 
-    const uniqueResults = Array.from(skuMap.values()).slice(0, 50);
+    const uniqueResults = Array.from(skuMap.values()).slice(0, 100);
 
     if (uniqueResults.length === 0) {
-        box.innerHTML = `<div style="padding:12px; text-align:center; color:var(--text-muted); font-size:0.85rem;">ไม่พบข้อมูล SKU / ชื่อรุ่น "${escapeHTML(val)}" ในฐานข้อมูล</div>`;
+        box.innerHTML = `<div style="padding:12px; text-align:center; color:var(--text-muted); font-size:0.85rem;">ไม่พบข้อมูล SKU / ชื่อรุ่น "${escapeHTML(val)}" ในฐานข้อมูล Master</div>`;
         box.style.display = 'block';
         return;
     }
@@ -220,7 +221,7 @@ function onSkuSearchInput(val) {
         html += `
             <div class="suggestion-item" onclick="selectSkuSuggestion('${escapeHTML(item.sku)}', '${escapeHTML(item.name)}')">
                 <span class="mono font-bold" style="color:var(--primary-text);">${escapeHTML(item.sku)}</span>
-                <span style="color:var(--text-main); font-size:0.82rem; margin-left:10px;">${escapeHTML(item.name)}</span>
+                <span style="color:var(--text-main); font-size:0.82rem; margin-left:10px; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">${escapeHTML(item.name)}</span>
             </div>
         `;
     });
@@ -234,4 +235,49 @@ function selectSkuSuggestion(sku, name) {
     document.getElementById('skuSearchInput').value = `${sku} - ${name}`;
     document.getElementById('skuSuggestionsBox').style.display = 'none';
     document.getElementById('inboundSn').focus();
+}
+
+// 🟢 ค้นหาด่วนรหัสสินค้า SKU ค้นหาจาก Master Products ทั้งหมดในฐานข้อมูล DB 100%
+function onSkuSearchInput(val) {
+    const box = document.getElementById('skuSuggestionsBox');
+    if (!box) return;
+
+    if (!val.trim()) {
+        box.style.display = 'none';
+        return;
+    }
+
+    const query = val.toLowerCase().trim();
+    const skuMap = new Map();
+
+    globalMasterProducts.concat(globalInventoryData).forEach(item => {
+        const skuKey = (item.sku || item.category || item.code || '').trim();
+        const nameVal = (item.name || item.description || item.model || item.title || '').trim();
+
+        if (skuKey && !skuMap.has(skuKey.toLowerCase())) {
+            if (skuKey.toLowerCase().includes(query) || nameVal.toLowerCase().includes(query)) {
+                skuMap.set(skuKey.toLowerCase(), { sku: skuKey, name: nameVal });
+            }
+        }
+    });
+
+    const uniqueResults = Array.from(skuMap.values()).slice(0, 100);
+
+    if (uniqueResults.length === 0) {
+        box.innerHTML = `<div style="padding:12px; text-align:center; color:var(--text-muted); font-size:0.85rem;">ไม่พบข้อมูล SKU / ชื่อรุ่น "${escapeHTML(val)}" ในฐานข้อมูล Master</div>`;
+        box.style.display = 'block';
+        return;
+    }
+
+    let html = '';
+    uniqueResults.forEach(item => {
+        html += `
+            <div class="suggestion-item" onclick="selectSkuSuggestion('${escapeHTML(item.sku)}', '${escapeHTML(item.name)}')">
+                <span class="mono font-bold" style="color:var(--primary-text);">${escapeHTML(item.sku)}</span>
+                <span style="color:var(--text-main); font-size:0.82rem; margin-left:10px; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">${escapeHTML(item.name)}</span>
+            </div>
+        `;
+    });
+    box.innerHTML = html;
+    box.style.display = 'block';
 }

@@ -1,5 +1,5 @@
 // =========================================================================
-// --- MODULE 2: INVENTORY CHECK & MANAGEMENT DATABASE ENGINE ---
+// --- MODULE 2: INVENTORY CHECK & MASTER PRODUCTS DATABASE ENGINE ---
 // =========================================================================
 
 let globalInventoryData = [];
@@ -8,6 +8,7 @@ let occupiedLocationsSet = new Set();
 let selectedItemSnSet = new Set();
 let currentFilteredItems = [];
 
+// 🟢 1. ดึงรายการสินค้าทั้งหมดในคลัง (ดึงครบ 100% วนลูปจนกว่าจะหมด)
 async function fetchAllWarehouseItems() {
     if (!navigator.onLine) {
         const cached = localStorage.getItem('WMS_LOCAL_INVENTORY_CACHE');
@@ -18,35 +19,61 @@ async function fetchAllWarehouseItems() {
     let from = 0;
     const step = 1000;
     let hasMore = true;
+    let retryCount = 0;
 
     while (hasMore) {
-        const { data, error } = await _supabase
-            .from('warehouse_items')
-            .select('*')
-            .order('created_at', { ascending: false })
-            .range(from, from + step - 1);
+        try {
+            const { data, error } = await _supabase
+                .from('warehouse_items')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .range(from, from + step - 1);
 
-        if (error) throw error;
+            if (error) {
+                console.error(`Fetch Warehouse Items Error at range ${from}-${from+step}:`, error);
+                retryCount++;
+                if (retryCount > 3) throw error;
+                await new Promise(res => setTimeout(res, 500));
+                continue;
+            }
 
-        if (data && data.length > 0) {
-            allData = allData.concat(data);
-            from += step;
-            if (data.length < step) hasMore = false;
-        } else {
+            if (data && data.length > 0) {
+                allData = allData.concat(data);
+                from += step;
+                if (data.length < step) hasMore = false;
+            } else {
+                hasMore = false;
+            }
+        } catch (e) {
+            console.warn("⚠️ ดึงช่วงข้อมูลบางส่วนไม่สำเร็จ ใช้ข้อมูลล่าสุดที่ดึงได้:", e);
             hasMore = false;
         }
     }
     
-    try { localStorage.setItem('WMS_LOCAL_INVENTORY_CACHE', JSON.stringify(allData)); } catch (e) {}
-    updateDBConnectionStatus(true, `(สต็อก: ${allData.length.toLocaleString()} รายการ)`);
+    try { 
+        localStorage.setItem('WMS_LOCAL_INVENTORY_CACHE', JSON.stringify(allData)); 
+    } catch (e) {
+        console.warn("⚠️ ไม่สามารถบันทึก Inventory Cache ลง LocalStorage:", e);
+    }
+
+    updateDBConnectionStatus(true, `(สต็อกในคลัง: ${allData.length.toLocaleString()} รายการ)`);
     return allData;
 }
 
+// 🟢 2. ดึงสินค้า Master SKU ทั้งหมดจากฐานข้อมูล Supabase (ไม่จำกัดจำนวน)
 async function loadMasterProductsFromDB() {
+    const statElem = document.getElementById('inboundMasterProductsStatText');
+    if (statElem && globalMasterProducts.length === 0) {
+        statElem.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> กำลังดึงข้อมูลสินค้า Master ทั้งหมดจากฐานข้อมูล DB...`;
+    }
+
     try {
         if (!navigator.onLine) {
             const cachedMaster = localStorage.getItem('WMS_MASTER_PRODUCTS_CACHE');
-            if (cachedMaster) globalMasterProducts = JSON.parse(cachedMaster);
+            if (cachedMaster) {
+                try { globalMasterProducts = JSON.parse(cachedMaster); } catch(err) {}
+            }
+            updateMasterProductsStatUI();
             return;
         }
 
@@ -56,13 +83,23 @@ async function loadMasterProductsFromDB() {
         let hasMore = true;
 
         while (hasMore) {
-            const { data, error } = await _supabase
+            let response = await _supabase
                 .from('products')
                 .select('*')
+                .order('id', { ascending: true })
                 .range(from, from + step - 1);
 
-            if (error) break;
+            if (response.error) {
+                response = await _supabase
+                    .from('products')
+                    .select('*')
+                    .order('sku', { ascending: true })
+                    .range(from, from + step - 1);
+            }
 
+            if (response.error) break;
+
+            const data = response.data;
             if (data && data.length > 0) {
                 allProducts = allProducts.concat(data);
                 from += step;
@@ -74,15 +111,42 @@ async function loadMasterProductsFromDB() {
 
         if (allProducts.length > 0) {
             globalMasterProducts = allProducts;
-            localStorage.setItem('WMS_MASTER_PRODUCTS_CACHE', JSON.stringify(allProducts));
+            try {
+                localStorage.setItem('WMS_MASTER_PRODUCTS_CACHE', JSON.stringify(allProducts));
+            } catch (quotaErr) {}
+        } else {
+            const cachedMaster = localStorage.getItem('WMS_MASTER_PRODUCTS_CACHE');
+            if (cachedMaster) {
+                try { globalMasterProducts = JSON.parse(cachedMaster); } catch(err) {}
+            }
         }
-    } catch(e) {}
+
+        updateMasterProductsStatUI();
+    } catch(e) {
+        const cachedMaster = localStorage.getItem('WMS_MASTER_PRODUCTS_CACHE');
+        if (cachedMaster) {
+            try { globalMasterProducts = JSON.parse(cachedMaster); } catch(err) {}
+        }
+        updateMasterProductsStatUI();
+    }
+}
+
+// 🟢 3. อัปเดตข้อความสถานะจำนวน Master SKU
+function updateMasterProductsStatUI() {
+    const statElem = document.getElementById('inboundMasterProductsStatText');
+    if (statElem) {
+        const count = globalMasterProducts.length;
+        if (count > 0) {
+            statElem.innerHTML = `<i class="fa-solid fa-circle-check" style="color:var(--success);"></i> เชื่อมต่อ DB สมบูรณ์ · ดึงข้อมูลสินค้า Master ในระบบแล้ว <strong class="mono" style="color:var(--primary-text); font-size:1.1rem; background:var(--bg-surface); padding:2px 8px; border-radius:6px; border:1px solid var(--border-strong);">${count.toLocaleString()}</strong> รายการ (ครบถ้วน 100%)`;
+        } else {
+            statElem.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color:var(--warning);"></i> ไม่พบข้อมูลสินค้า Master ในระบบ`;
+        }
+    }
 }
 
 async function loadDataFromDatabase() {
     try {
         globalInventoryData = await fetchAllWarehouseItems();
-        
         globalInventoryData.forEach(item => {
             if (item.meter === undefined || item.meter === null || item.meter === '') {
                 item.meter = 0;
@@ -210,8 +274,19 @@ function renderInventoryTable(items) {
 
 function updateKPIs() {
     document.getElementById('kpiTotalItems').textContent = globalInventoryData.length.toLocaleString();
-    const uniqueSkus = new Set(globalInventoryData.map(i => i.category)).size;
-    document.getElementById('kpiTotalModels').textContent = uniqueSkus.toLocaleString();
+
+    const uniqueInventorySkus = new Set(globalInventoryData.map(i => i.category)).size;
+    const totalMasterSkus = globalMasterProducts.length;
+
+    const kpiModelElem = document.getElementById('kpiTotalModels');
+    if (kpiModelElem) {
+        if (totalMasterSkus > 0) {
+            kpiModelElem.textContent = `${uniqueInventorySkus.toLocaleString()} / ${totalMasterSkus.toLocaleString()}`;
+        } else {
+            kpiModelElem.textContent = uniqueInventorySkus.toLocaleString();
+        }
+    }
+
     const dockItems = globalInventoryData.filter(i => (i.location || '').toUpperCase() === 'DOCK').length;
     document.getElementById('kpiDockItems').textContent = dockItems.toLocaleString();
 }

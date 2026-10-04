@@ -71,8 +71,9 @@ function removeFromOutboundCart(sn) {
     renderOutboundCartTable();
 }
 
-function requestOutboundApproval() {
-    if (!requireOnline('ตัดจ่าย/ส่งคำขอต้องออนไลน์')) return;
+// 🟢 ส่งคำขอจ่ายสินค้าออกสำหรับ User ทั่วไป หรือดำเนินการตัดจ่ายทันทีสำหรับ Admin
+async function requestOutboundApproval() {
+    if (!requireOnline('ตัดจ่าย/ส่งคำขอต้องเชื่อมต่ออินเทอร์เน็ต')) return;
     if(outboundCartItems.length === 0) {
         alert("⚠ กรุณายิงสแกน S/N สินค้าอย่างน้อย 1 รายการเพื่อตัดจ่าย");
         return;
@@ -87,17 +88,26 @@ function requestOutboundApproval() {
         return;
     }
 
+    const snList = outboundCartItems.map(i => i.sn);
+
+    // 🟢 หากผู้ใช้เป็น User ทั่วไป -> ส่งคำขออนุมัติจ่ายออก
     if (currentUser && currentUser.role === 'user') {
-        const snList = outboundCartItems.map(i => i.sn);
-        createPendingApprovalRequest('OUTBOUND', `ตัดจ่ายสินค้าออกจากคลังไปยัง: ${dest} (${snList.length} รายการ)`, snList, {
-            destination: dest, dispatcher: dispatcher, receiver: receiver, snList: snList
-        });
-        outboundCartItems = [];
-        renderOutboundCartTable();
+        const success = await createPendingApprovalRequest(
+            'OUTBOUND', 
+            `ขอตัดจ่ายสินค้าออกจากคลังไปยัง: ${dest} (${snList.length} รายการ)`, 
+            snList, 
+            { destination: dest, dispatcher: dispatcher, receiver: receiver, snList: snList }
+        );
+        
+        if (success) {
+            outboundCartItems = [];
+            renderOutboundCartTable();
+        }
         return;
     }
 
-    processFinalOutboundWorkOrder();
+    // 🟢 หากเป็น Admin -> ดำเนินการตัดจ่ายลง DB โดยตรง
+    await processFinalOutboundWorkOrder();
 }
 
 async function processFinalOutboundWorkOrder() {

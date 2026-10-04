@@ -210,16 +210,33 @@ function renderUserManagementTable() {
     tbody.innerHTML = '';
 
     systemUsers.forEach((u, idx) => {
+        const isSelf = currentUser && currentUser.username === u.username;
+        const isAdminMain = u.username === 'admin';
+        
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td style="text-align:center;" class="mono">${idx + 1}</td>
             <td><code class="mono font-bold" style="color:var(--primary-text);">${escapeHTML(u.username)}</code></td>
-            <td style="font-weight:600;">${escapeHTML(u.name)}</td>
+            <td style="font-weight:600;">${escapeHTML(u.name || u.full_name || '-')}</td>
             <td>${escapeHTML(u.department || '-')}</td>
             <td><span class="badge-action ${u.role === 'admin' ? 'auth' : 'nav'}">${escapeHTML(u.role)}</span></td>
-            <td style="text-align:center;"><button class="btn btn-sm btn-primary" onclick="inspectUserLogs('${escapeHTML(u.username)}')"><i class="fa-solid fa-eye"></i> ประวัติ</button></td>
-            <td style="text-align:center;"><button class="btn btn-sm btn-secondary" onclick="openEditUserModal(${u.id})"><i class="fa-solid fa-pen-to-square"></i></button></td>
-            <td style="text-align:center;">${u.username !== 'admin' ? `<button class="btn btn-sm btn-danger" onclick="deleteUserAccount(${u.id})"><i class="fa-solid fa-trash"></i></button>` : '-'}</td>
+            <td style="text-align:center;">
+                <button class="btn btn-sm btn-primary" onclick="inspectUserLogs('${escapeHTML(u.username)}')">
+                    <i class="fa-solid fa-eye"></i> ประวัติ
+                </button>
+            </td>
+            <td style="text-align:center;">
+                <button class="btn btn-sm btn-secondary" onclick="openEditUserModal('${u.id}')" title="แก้ไขข้อมูล">
+                    <i class="fa-solid fa-pen-to-square" style="color:var(--primary);"></i> แก้ไข
+                </button>
+            </td>
+            <td style="text-align:center;">
+                ${(!isAdminMain && !isSelf) ? `
+                    <button class="btn btn-sm btn-danger" onclick="deleteUserAccount('${u.id}')" title="ลบบัญชี">
+                        <i class="fa-solid fa-trash"></i> ลบ
+                    </button>
+                ` : `<span style="font-size:0.75rem; color:var(--text-muted);">${isAdminMain ? 'แอดมินหลัก' : 'ใช้งานอยู่'}</span>`}
+            </td>
         `;
         tbody.appendChild(tr);
     });
@@ -230,6 +247,6 @@ function populateLogUserDropdown() {
     if(!select) return;
     select.innerHTML = `<option value="ALL">👤 ผู้ใช้ทุกคน (All Users)</option>`;
     systemUsers.forEach(u => {
-        select.innerHTML += `<option value="${escapeHTML(u.username)}">${escapeHTML(u.name)} (${escapeHTML(u.username)})</option>`;
+        select.innerHTML += `<option value="${escapeHTML(u.username)}">${escapeHTML(u.name || u.full_name)} (${escapeHTML(u.username)})</option>`;
     });
 }

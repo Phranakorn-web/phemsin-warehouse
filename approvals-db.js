@@ -1,5 +1,5 @@
 // =========================================================================
-// --- MODULE 6: APPROVAL REQUESTS DATABASE & REALTIME ENGINE (AUTO-REFRESH FIX) ---
+// --- MODULE 6: APPROVAL REQUESTS DATABASE & REALTIME ENGINE (NO-LOGIN NOTIFICATION BLOCK) ---
 // =========================================================================
 
 const WMS_SUPABASE_URL = "https://eusuehaqgwkcgowsgyco.supabase.co";
@@ -13,9 +13,55 @@ let userTrackedRequestStatuses = {};
 const LOCAL_APPROVALS_KEY = 'wms_local_pending_approvals_v2';
 
 // -------------------------------------------------------------------------
-// 1. ระบบตรวจจับสิทธิ์ Admin (Dynamic Role Checking)
+// 0. ตรวจสอบสถานะว่าผู้ใช้เข้าสู่ระบบสำเร็จแล้วหรือยัง (บล็อกแจ้งเตือนในหน้า Login 100%)
+// -------------------------------------------------------------------------
+function isUserLoggedIn() {
+    // 1. เช็กตัวป้อนรหัสผ่านหรือหน้าต่าง Login ที่กำลังแสดงผลอยู่
+    const passwordInput = document.querySelector('input[type="password"]');
+    if (passwordInput && passwordInput.offsetParent !== null) {
+        return false;
+    }
+
+    const loginModal = document.getElementById('loginModal') || document.getElementById('loginView') || document.getElementById('loginSection') || document.getElementById('login-modal');
+    if (loginModal && (loginModal.style.display !== 'none' && !loginModal.classList.contains('hidden'))) {
+        return false;
+    }
+
+    const loginContainer = document.querySelector('.login-container') || document.querySelector('.login-box') || document.querySelector('#login-form');
+    if (loginContainer && loginContainer.offsetParent !== null) {
+        return false;
+    }
+
+    if (document.body.classList.contains('login-page') || document.body.classList.contains('is-logged-out')) {
+        return false;
+    }
+
+    // 2. เช็กตัวแปรสิทธิ์ผู้ใช้งานหลังล็อกอิน
+    if (typeof currentUser !== 'undefined' && currentUser && (currentUser.id || currentUser.username || currentUser.email)) {
+        return true;
+    }
+
+    try {
+        const storedUser = localStorage.getItem('currentUser') || localStorage.getItem('user') || sessionStorage.getItem('currentUser') || sessionStorage.getItem('user');
+        if (storedUser && storedUser !== '{}') {
+            return true;
+        }
+    } catch(e) {}
+
+    // 3. เช็กว่าเปิดหน้าเนื้อหาหลักภายในระบบอยู่หรือไม่
+    if (document.getElementById('app-content') || document.getElementById('sidebar') || document.querySelector('.main-content') || document.getElementById('view-approvals')) {
+        return true;
+    }
+
+    return false;
+}
+
+// -------------------------------------------------------------------------
+// 1. ระบบตรวจจับสิทธิ์ Admin (Dynamic Role Checking 100%)
 // -------------------------------------------------------------------------
 function isCurrentUserAdmin() {
+    if (!isUserLoggedIn()) return false;
+
     let userObj = (typeof currentUser !== 'undefined' && currentUser) ? currentUser : null;
 
     if (!userObj) {
@@ -71,8 +117,9 @@ function escapeHTML(str) {
         .replace(/'/g, '&#039;');
 }
 
-// 🟢 ระบบเล่นเสียงเตือน TTS แยกส่วน 100%
+// 🟢 เล่นเสียงแจ้งเตือนภาษาไทย (ระงับในหน้าเข้าสู่ระบบ 100%)
 function playTTSNotification(text) {
+    if (!isUserLoggedIn()) return; // ⛔ บล็อกเสียงพูดถ้าอยู่ในหน้าล็อกอิน
     try {
         if ('speechSynthesis' in window) {
             window.speechSynthesis.cancel();
@@ -89,20 +136,13 @@ function playTTSNotification(text) {
 
 // 🟢 ระบบ Auto-Refresh หน้ารายการสินค้าอัตโนมัติเมื่อมีความเปลี่ยนแปลง
 function triggerAutoUIRefresh() {
+    if (!isUserLoggedIn()) return;
     console.log("🔄 [Auto-Refresh Engine] Refreshing website UI/Data...");
     try {
-        if (typeof loadDataFromDatabase === 'function') {
-            loadDataFromDatabase();
-        }
-        if (typeof fetchInventoryData === 'function') {
-            fetchInventoryData();
-        }
-        if (typeof renderStockTable === 'function') {
-            renderStockTable();
-        }
-        if (typeof refreshWarehouseUI === 'function') {
-            refreshWarehouseUI();
-        }
+        if (typeof loadDataFromDatabase === 'function') loadDataFromDatabase();
+        if (typeof fetchInventoryData === 'function') fetchInventoryData();
+        if (typeof renderStockTable === 'function') renderStockTable();
+        if (typeof refreshWarehouseUI === 'function') refreshWarehouseUI();
     } catch(e) {
         console.warn("⚠️ Auto-refresh triggered fallback:", e);
     }
@@ -141,7 +181,7 @@ function saveLocalApprovalsStore(data) {
 // 2. ฝั่ง User ทั่วไปส่งคำขออนุมัติ (ลบ / สแกนจ่าย / ย้ายพิกัด)
 // -------------------------------------------------------------------------
 async function createPendingApprovalRequest(type, desc, targetSns, payloadData) {
-    console.log("🚀 [User Request] Submitting approval request...", { type, desc, targetSns, payloadData });
+    console.log("🚀 [User Action] Submitting approval request...", { type, desc, targetSns, payloadData });
 
     const cleanTargetSns = Array.isArray(targetSns)
         ? targetSns.filter(s => s !== null && s !== undefined && String(s).trim() !== '').map(s => String(s).trim())
@@ -167,7 +207,7 @@ async function createPendingApprovalRequest(type, desc, targetSns, payloadData) 
         id: reqId,
         requester_username: String(usernameVal),
         requester_name: String(nameVal),
-        request_type: String(type || 'DELETE'), // 'DELETE', 'DISPATCH', 'TRANSFER'
+        request_type: String(type || 'DELETE'),
         description: String(desc || 'ขอดำเนินการเกี่ยวกับสต็อกสินค้า'),
         target_sns: cleanTargetSns,
         payload: payloadData || {},
@@ -222,13 +262,11 @@ async function createPendingApprovalRequest(type, desc, targetSns, payloadData) 
 
     userTrackedRequestStatuses[activeRecord.id] = 'PENDING';
 
-    // 🔊 เสียงแจ้งเตือนฝั่ง User
     playTTSNotification("ส่งคำขออนุมัติเรียบร้อยแล้วค่ะ");
 
-    // 🟢 ป๊อปอัพแจ้งเตือนฝั่ง User
     showFloatingNotificationAlert(
         "📤 ส่งคำขออนุมัติเรียบร้อยแล้ว!",
-        `รายการ: ${desc}\nสถานะ: ส่งเรื่องไปยังศูนย์อนุมัติเรียบร้อยแล้ว อยู่ระหว่างการรอพิจารณา`,
+        `รายการ: ${desc}\nสถานะ: ส่งเรื่องไปยังศูนย์อนุมัติเรียบร้อยแล้ว อยู่ระหว่างรอผู้ดูแลระบบ (Admin) อนุมัติ`,
         "warning"
     );
 
@@ -239,7 +277,7 @@ async function createPendingApprovalRequest(type, desc, targetSns, payloadData) 
 }
 
 // -------------------------------------------------------------------------
-// 3. โหลดคำขออนุมัติจาก DB & แยกการแจ้งเตือน + Auto-Refresh 100%
+// 3. โหลดคำขออนุมัติจาก DB & แยกการแจ้งเตือน (บล็อกการแจ้งเตือนในหน้า Login)
 // -------------------------------------------------------------------------
 async function loadPendingApprovalsFromDB() {
     let mergedData = [];
@@ -273,8 +311,20 @@ async function loadPendingApprovalsFromDB() {
 
     if (mergedData) {
         const pendingCount = mergedData.filter(r => r.status === 'PENDING').length;
+        const loggedIn = isUserLoggedIn(); // 🟢 ตรวจสอบสถานะการเข้าสู่ระบบ
         const isAdmin = isCurrentUserAdmin();
 
+        // 🚨 บล็อกการแสดงผลแจ้งเตือนทุกชนิดในหน้า Login
+        if (!loggedIn) {
+            updateAdminApprovalBadgeUI(0);
+            mergedData.forEach(req => {
+                userTrackedRequestStatuses[req.id] = req.status;
+            });
+            pendingApprovalsList = mergedData;
+            return;
+        }
+
+        // 🟢 ADMIN ONLY (หลังจากใส่รหัสผ่านล็อกอินสำเร็จแล้วเท่านั้น)
         if (isAdmin) {
             mergedData.forEach(req => {
                 if (req.status === 'PENDING') {
@@ -288,7 +338,7 @@ async function loadPendingApprovalsFromDB() {
         } else {
             updateAdminApprovalBadgeUI(0);
 
-            // 🟢 USER DISPATCHER: ตรวจจับและอัปเดตรีเฟรชหน้าเว็บอัตโนมัติเมื่อได้รับการอนุมัติ
+            // 🟢 USER ONLY (หลังจากใส่รหัสผ่านล็อกอินสำเร็จแล้วเท่านั้น)
             if (typeof currentUser !== 'undefined' && currentUser && currentUser.username) {
                 mergedData.forEach(req => {
                     if (req.requester_username === currentUser.username) {
@@ -300,7 +350,6 @@ async function loadPendingApprovalsFromDB() {
                                 `คำขอ "${req.description}" ของคุณได้รับการอนุมัติเรียบร้อยแล้ว`,
                                 "success"
                             );
-                            // 🔄 Auto-refresh UI ทันทีไม่ต้องกดรีเอง
                             triggerAutoUIRefresh();
                         } else if (oldStatus === 'PENDING' && req.status === 'REJECTED') {
                             playTTSNotification("คำขอของคุณไม่ผ่านการอนุมัติค่ะ");
@@ -322,9 +371,11 @@ async function loadPendingApprovalsFromDB() {
 }
 
 // -------------------------------------------------------------------------
-// 4. Render ตารางรายการอนุมัติและประวัติทั้งหมด (จัดรูปแบบ S/N)
+// 4. Render ตารางรายการอนุมัติและประวัติทั้งหมด
 // -------------------------------------------------------------------------
 function renderApprovalsTable(approvals) {
+    if (!isUserLoggedIn()) return;
+
     const tbody = document.getElementById('approvalsTableBody') 
         || document.getElementById('approvalTableBody')
         || document.querySelector('#view-approvals table tbody');
@@ -406,6 +457,7 @@ function renderApprovalsTable(approvals) {
 // 5. Update Badge Count (เฉพาะ Admin)
 // -------------------------------------------------------------------------
 function updateAdminApprovalBadgeUI(count) {
+    if (!isUserLoggedIn()) return;
     const badges = document.querySelectorAll('#sidebarApprovalBadge, .approval-pending-badge');
     badges.forEach(b => {
         if (count > 0 && isCurrentUserAdmin()) {
@@ -418,10 +470,10 @@ function updateAdminApprovalBadgeUI(count) {
 }
 
 // -------------------------------------------------------------------------
-// 6. ป๊อปอัพเด้งแจ้งเตือนฝั่ง Admin มุมขวาล่าง
+// 6. ป๊อปอัพเด้งแจ้งเตือนฝั่ง Admin มุมขวาล่าง (ไม่แสดงในหน้า Login)
 // -------------------------------------------------------------------------
 function triggerAdminNotification(record, count) {
-    if (!isCurrentUserAdmin()) return;
+    if (!isUserLoggedIn() || !isCurrentUserAdmin()) return;
 
     playTTSNotification("มีคำขออนุมัติใหม่เข้ามาค่ะ");
 
@@ -434,6 +486,8 @@ function triggerAdminNotification(record, count) {
 }
 
 function showFloatingNotificationAlert(title, message, type = 'info', isClickable = false) {
+    if (!isUserLoggedIn()) return; // ⛔ บล็อกการแสดงผลแจ้งเตือนหากอยู่ในหน้าเข้าสู่ระบบ
+
     let container = document.getElementById('globalFloatingNotificationContainer');
     if (!container) {
         container = document.createElement('div');
@@ -481,10 +535,10 @@ function showFloatingNotificationAlert(title, message, type = 'info', isClickabl
 }
 
 // -------------------------------------------------------------------------
-// 7. สลับ View ไปยังหน้าอนุมัติ (เฉพาะ Admin)
+// 7. สลับ View ไปยังหน้าอนุมัติ
 // -------------------------------------------------------------------------
 function navigateToApprovalCenter() {
-    if (!isCurrentUserAdmin()) return;
+    if (!isUserLoggedIn() || !isCurrentUserAdmin()) return;
     
     if (typeof switchView === 'function') switchView('view-approvals');
     else if (typeof showView === 'function') showView('view-approvals');
@@ -497,7 +551,7 @@ function navigateToApprovalCenter() {
 }
 
 // -------------------------------------------------------------------------
-// 8. Realtime Engine (Fast Polling 1 วินาที + WebSocket Listener + Auto UI Sync)
+// 8. Realtime Engine (Fast Polling 1 วินาที + WebSocket Listener)
 // -------------------------------------------------------------------------
 function startApprovalRealtimeMonitor() {
     initApprovalRealtimeSubscription();
@@ -523,7 +577,7 @@ function initApprovalRealtimeSubscription() {
         .on('postgres_changes', { event: '*', schema: 'public', table: 'approval_requests' }, (payload) => {
             console.log("⚡ [Realtime Approval Event]:", payload);
             loadPendingApprovalsFromDB();
-            triggerAutoUIRefresh(); // 🔄 รีเฟรชข้อมูลสินค้าบนหน้าเว็บแบบเรียลไทม์อัตโนมัติ
+            triggerAutoUIRefresh();
         })
         .subscribe((status) => {
             if (status === 'SUBSCRIBED') {
@@ -533,10 +587,10 @@ function initApprovalRealtimeSubscription() {
 }
 
 // -------------------------------------------------------------------------
-// 9. Admin Actions (อนุมัติ / ปฏิเสธ - อัปเดตข้อมูลจริงเข้า DB พร้อมสั่ง Auto Refresh)
+// 9. Admin Actions (อนุมัติ / ปฏิเสธ)
 // -------------------------------------------------------------------------
 async function approveUserRequest(id) {
-    if (!isCurrentUserAdmin()) return;
+    if (!isUserLoggedIn() || !isCurrentUserAdmin()) return;
 
     const req = pendingApprovalsList.find(r => String(r.id) === String(id));
     if (!req) return;
@@ -546,7 +600,6 @@ async function approveUserRequest(id) {
 
     if (client) {
         try {
-            // 1. ดำเนินการอัปเดต/ลบ/ย้ายในฐานข้อมูลเมื่อ Admin อนุมัติ
             if (req.request_type === 'DELETE' || req.request_type === 'DISPATCH') {
                 await client.from('warehouse_items').delete().in('sn', req.target_sns);
             } else if (req.request_type === 'TRANSFER' && req.payload && req.payload.target_location) {
@@ -556,7 +609,6 @@ async function approveUserRequest(id) {
                 }).in('sn', req.target_sns);
             }
 
-            // 2. อัปเดตสถานะคำขออนุมัติ
             await client.from('approval_requests').update({
                 status: 'APPROVED',
                 approved_by: adminUser,
@@ -573,13 +625,12 @@ async function approveUserRequest(id) {
 
     if (typeof showToast === 'function') showToast("✅ อนุมัติคำขอเรียบร้อยแล้ว");
     
-    // 🔄 รีเฟรชตารางสต็อกสินค้าและตารางคำขออัตโนมัติทันที
     triggerAutoUIRefresh();
     await loadPendingApprovalsFromDB();
 }
 
 async function rejectUserRequest(id) {
-    if (!isCurrentUserAdmin()) return;
+    if (!isUserLoggedIn() || !isCurrentUserAdmin()) return;
 
     const req = pendingApprovalsList.find(r => String(r.id) === String(id));
     if (!req) return;

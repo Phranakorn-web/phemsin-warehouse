@@ -1,11 +1,19 @@
 // =========================================================================
-// --- MODULE 8: WAREHOUSE SETTINGS & MENU DB MAPPING ENGINE ---
+// --- MODULE 8: WAREHOUSE SETTINGS & MENU DB MAPPING ENGINE (UPDATED) ---
 // =========================================================================
 
-let aisleConfigs = {};
-let masterAisles = [];
+const SUPABASE_CONFIG_ENV = {
+    url: "https://eusuehaqgwkcgowsgyco.supabase.co",
+    key: "sb_publishable_ww-mPdyom_i6S4XhfAFj9Q_vFBpTuaE"
+};
 
-const MENU_DATABASE_MAPPING = [
+// ใช้ Global Window Variable เพื่อป้องกันตัวแปรซ้ำซ้อน
+window.masterAisles = window.masterAisles || [];
+window.aisleConfigs = window.aisleConfigs || {};
+
+let isConfigsLoadedFromDB = false;
+
+let menuDbMappingData = [
     { menuId: 'view-inventory', menuTitle: 'เช็คสต็อกสินค้า', dbTable: 'warehouse_items / products', status: 'Active (Realtime)', desc: 'อ่าน/ค้นหา สต็อกทั้งหมด และค้นหารหัสสินค้า Master' },
     { menuId: 'view-inbound', menuTitle: 'รับสินค้าเข้าคลัง (Fast)', dbTable: 'warehouse_items', status: 'Active (Realtime Insert)', desc: 'เพิ่มรายการ S/N สินค้าเข้าฐานข้อมูลโดยตรง' },
     { menuId: 'view-outbound', menuTitle: 'จ่ายสินค้าออกจากคลัง', dbTable: 'outbound_orders / warehouse_items', status: 'Active (Realtime Sync)', desc: 'ตัดจ่าย S/N ออกจากคลัง และสร้างใบสั่งจ่าย' },
@@ -15,161 +23,295 @@ const MENU_DATABASE_MAPPING = [
     { menuId: 'view-settings', menuTitle: 'ตั้งค่าพิกัดคลังสินค้า', dbTable: 'system_settings / profiles', status: 'Active (System Config)', desc: 'บันทึกโครงสร้างคลัง จัดการสิทธิ์ผู้ใช้ และตรวจสอบ DB Connection' }
 ];
 
-// 🟢 บันทึกลำดับตำแหน่งแถวและการตั้งค่าทั้งหมดลงฐานข้อมูล Supabase อัตโนมัติ 100%
+/**
+ * 🟢 ดึงตัวเชื่อมต่อ Supabase Client Instance
+ */
+function getSupabaseClient() {
+    if (window._supabase) return window._supabase;
+    if (typeof _supabase !== 'undefined' && _supabase) return _supabase;
+    if (typeof supabase !== 'undefined' && supabase && typeof supabase.createClient === 'function') {
+        try {
+            window._supabase = supabase.createClient(SUPABASE_CONFIG_ENV.url, SUPABASE_CONFIG_ENV.key);
+            return window._supabase;
+        } catch (e) {
+            console.error("❌ ไม่สามารถสร้าง Supabase Client ได้:", e);
+        }
+    }
+    return null;
+}
+
+/**
+ * 🟢 บันทึกลำดับตำแหน่งแถว รายงาน DB Mapping และสถานะล็อก ลง Supabase DB 100%
+ */
 async function saveAllWarehouseConfigsToDB() {
-    const payload = {
+    const client = getSupabaseClient();
+    
+    const aislePayload = {
         key: 'aisle_configs',
-        value: { aisles: masterAisles, configs: aisleConfigs },
+        value: { 
+            aisles: window.masterAisles, 
+            configs: window.aisleConfigs 
+        },
         updated_at: new Date().toISOString()
     };
 
-    localStorage.setItem('WMS_AISLE_CONFIGS', JSON.stringify(payload.value));
+    const mappingPayload = {
+        key: 'menu_db_mapping',
+        value: menuDbMappingData,
+        updated_at: new Date().toISOString()
+    };
 
-    if (navigator.onLine) {
-        try {
-            await _supabase.from('system_settings').upsert(payload, { onConflict: 'key' });
-            showToast("⚡ บันทึกลำดับตำแหน่งล่าสุดลงฐานข้อมูลสำเร็จ 100%");
-        } catch(e) {
-            console.warn("⚠️ ไม่สามารถบันทึกโครงสร้างลง DB ได้:", e);
+    // บันทึกลง LocalStorage สำรอง
+    try {
+        localStorage.setItem('WMS_AISLE_CONFIGS', JSON.stringify(aislePayload.value));
+        localStorage.setItem('WMS_MENU_MAPPING', JSON.stringify(mappingPayload.value));
+    } catch(err) {}
+
+    if (!client) {
+        console.warn("⚠️ ไม่พบ Supabase Client: บันทึกเฉพาะ LocalStorage");
+        if (typeof showToast === 'function') showToast("💾 บันทึกในเครื่องแล้ว (รอการเชื่อมต่อ DB)", "warning");
+        return false;
+    }
+
+    try {
+        // ลอง Upsert แบบมี updated_at ก่อน
+        let { error: err1 } = await client.from('system_settings').upsert(aislePayload, { onConflict: 'key' });
+        
+        // หาก Schema ใน DB ยังไม่ได้เพิ่ม updated_at ให้ส่งเฉพาะ key และ value เป็น Fallback
+        if (err1 && err1.message && err1.message.includes('updated_at')) {
+            console.warn("⚠️ คอลัมน์ updated_at ไม่พบใน DB, สลับไปใช้โหมด Fallback...");
+            const fallbackAislePayload = { key: 'aisle_configs', value: aislePayload.value };
+            const fallbackMappingPayload = { key: 'menu_db_mapping', value: mappingPayload.value };
+            
+            const resA = await client.from('system_settings').upsert(fallbackAislePayload, { onConflict: 'key' });
+            const resB = await client.from('system_settings').upsert(fallbackMappingPayload, { onConflict: 'key' });
+            
+            if (resA.error) throw resA.error;
+            if (resB.error) throw resB.error;
+        } else {
+            if (err1) throw err1;
+            const { error: err2 } = await client.from('system_settings').upsert(mappingPayload, { onConflict: 'key' });
+            if (err2) throw err2;
         }
+
+        console.log("⚡ บันทึกลำดับและสถานะล็อกลง DB เรียบร้อย 100%:", window.masterAisles);
+        if (typeof showToast === 'function') {
+            showToast("⚡ บันทึกลำดับแถวและพิกัดลง DB เรียบร้อย 100%");
+        }
+        return true;
+    } catch (e) {
+        console.error("❌ บันทึกลง Supabase DB ไม่สำเร็จ:", e);
+        if (typeof showToast === 'function') {
+            showToast("❌ บันทึกลง DB ล้มเหลว: " + (e.message || JSON.stringify(e)), "error");
+        }
+        return false;
     }
 }
 
-// 🟢 โหลดโครงสร้างแถวและลำดับตำแหน่งล่าสุดจาก Supabase DB
-async function loadWarehouseConfigsFromDB() {
+/**
+ * 🟢 โหลดโครงสร้างแถว ลำดับตำแหน่งพิกัดล่าสุด จาก Supabase DB
+ */
+async function loadWarehouseConfigsFromDB(retryCount = 0) {
     try {
         let dbAisles = [];
         let dbConfigs = {};
+        let loadedSuccess = false;
 
-        if (navigator.onLine) {
-            const { data, error } = await _supabase
+        const client = getSupabaseClient();
+
+        if (!client && retryCount < 5) {
+            setTimeout(() => loadWarehouseConfigsFromDB(retryCount + 1), 300);
+            return;
+        }
+
+        if (client) {
+            // 1. ดึงข้อมูลตั้งค่าแถวจัดเก็บ
+            const { data: aisleData, error: aisleErr } = await client
                 .from('system_settings')
                 .select('*')
                 .eq('key', 'aisle_configs')
                 .maybeSingle();
 
-            if (!error && data && data.value) {
-                dbAisles = Array.isArray(data.value.aisles) ? data.value.aisles : [];
-                dbConfigs = data.value.configs || {};
+            if (!aisleErr && aisleData && aisleData.value) {
+                let val = aisleData.value;
+                if (typeof val === 'string') {
+                    try { val = JSON.parse(val); } catch(e) {}
+                }
+                if (val && typeof val === 'object') {
+                    dbAisles = Array.isArray(val.aisles) ? val.aisles : [];
+                    dbConfigs = val.configs || {};
+                    if (dbAisles.length > 0) loadedSuccess = true;
+                }
+            }
+
+            // 2. ดึงข้อมูลรายงาน DB Mapping
+            const { data: mapData, error: mapErr } = await client
+                .from('system_settings')
+                .select('*')
+                .eq('key', 'menu_db_mapping')
+                .maybeSingle();
+
+            if (!mapErr && mapData && mapData.value) {
+                let mapVal = mapData.value;
+                if (typeof mapVal === 'string') {
+                    try { mapVal = JSON.parse(mapVal); } catch(e) {}
+                }
+                if (Array.isArray(mapVal)) menuDbMappingData = mapVal;
             }
         }
 
-        const activeAislesFromInventory = new Set();
-        if (Array.isArray(globalInventoryData)) {
-            globalInventoryData.forEach(item => {
-                if (item.location) {
-                    const parts = item.location.split('-');
-                    if (parts[0]) activeAislesFromInventory.add(parts[0].toUpperCase());
-                }
+        if (!loadedSuccess || dbAisles.length === 0) {
+            const local = localStorage.getItem('WMS_AISLE_CONFIGS');
+            if (local) {
+                try {
+                    let parsed = JSON.parse(local);
+                    if (typeof parsed === 'string') parsed = JSON.parse(parsed);
+                    dbAisles = parsed.aisles || [];
+                    dbConfigs = parsed.configs || {};
+                    if (dbAisles.length > 0) loadedSuccess = true;
+                } catch(err) {}
+            }
+        }
+
+        // ยึดลำดับพิกัดจาก DB เป็นหลัก 100%
+        if (loadedSuccess && dbAisles.length > 0) {
+            window.masterAisles = dbAisles;
+            window.aisleConfigs = dbConfigs;
+            isConfigsLoadedFromDB = true;
+            console.log("🟢 โหลดลำดับแถวจาก DB สำเร็จ 100%:", window.masterAisles);
+        } else if (!isConfigsLoadedFromDB) {
+            const defaultAisles = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'DOCK', 'OFFICE', 'PENDING'];
+            window.masterAisles = defaultAisles;
+            window.masterAisles.forEach(aisle => {
+                window.aisleConfigs[aisle] = window.aisleConfigs[aisle] || { 
+                    bays: 10, 
+                    shelves: 1, 
+                    slots: 10, 
+                    is_locked: ['A', 'B', 'C', 'D', 'DOCK'].includes(aisle) 
+                };
             });
         }
 
-        const defaultAisles = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'DOCK', 'OFFICE', 'PENDING'];
-        
-        // หากมีลำดับที่บันทึกไว้ใน DB ให้ใช้ลำดับนั้นเป็นหลัก มิฉะนั้นให้ใช้ชุดค่าผสมเริ่มต้น
-        let combinedAisles;
-        if (dbAisles.length > 0) {
-            const missingAisles = [...defaultAisles, ...activeAislesFromInventory].filter(a => !dbAisles.includes(a));
-            combinedAisles = [...dbAisles, ...missingAisles];
-        } else {
-            combinedAisles = Array.from(new Set([...defaultAisles, ...activeAislesFromInventory]));
-        }
-
-        masterAisles = combinedAisles;
-
-        masterAisles.forEach(aisle => {
-            aisleConfigs[aisle] = dbConfigs[aisle] || { bays: 10, shelves: 1, slots: 10, is_locked: ['A', 'B', 'C', 'D', 'DOCK'].includes(aisle) };
-        });
-
-        if (masterAisles.length > 0 && (!currentSelectedAisle || !masterAisles.includes(currentSelectedAisle))) {
-            currentSelectedAisle = masterAisles[0];
+        if (window.masterAisles.length > 0 && (!window.currentSelectedAisle || !window.masterAisles.includes(window.currentSelectedAisle))) {
+            window.currentSelectedAisle = window.masterAisles[0];
         }
     } catch(e) {
         console.error("loadWarehouseConfigsFromDB Error:", e);
     }
 
     renderAisleSettingsTable();
-    populateAisleDropdowns();
-    refreshLocationVisualizerIfActive();
+    if (typeof populateAisleDropdowns === 'function') populateAisleDropdowns();
+    if (typeof refreshLocationVisualizerIfActive === 'function') refreshLocationVisualizerIfActive();
     renderMenuDatabaseMappingTable();
 }
 
-// 🟢 เรนเดอร์ตารางตั้งค่าโครงสร้างแถว พร้อมฟังก์ชันเลื่อนลำดับขึ้น-ลงและบันทึกอัตโนมัติ
-function renderAisleSettingsTable() {
-    const tbody = document.getElementById('aisleSettingsTableBody');
-    if (!tbody) return;
-    tbody.innerHTML = '';
+/**
+ * 🟢 ระบบ Realtime Listener Sync สลับลำดับแถวข้ามเครื่องอัตโนมัติ
+ */
+function initWarehouseSettingsRealtime() {
+    const client = getSupabaseClient();
+    if (!client) return;
 
-    masterAisles.forEach((aisle, idx) => {
-        const cfg = aisleConfigs[aisle] || { bays: 10, shelves: 1, slots: 10, is_locked: false };
-        const count = globalInventoryData.filter(i => (i.location || '').toUpperCase().startsWith(`${aisle}-`) || (i.location || '').toUpperCase() === aisle).length;
-        const isLocked = Boolean(cfg.is_locked);
-
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td style="text-align:center; font-weight:700;" class="mono">${idx + 1}</td>
-            <td>
-                <div style="display:flex; align-items:center; gap:8px;">
-                    <strong class="mono" style="font-size:1rem; color:var(--primary-text);">${escapeHTML(aisle)}</strong>
-                    ${isLocked ? '<span class="badge-action inbound" style="font-size:0.7rem;"><i class="fa-solid fa-lock"></i> โครงสร้างหลัก (ล็อก)</span>' : ''}
-                </div>
-            </td>
-            <td style="text-align:center;"><input type="number" class="form-control mono" style="width:70px; text-align:center; display:inline-block;" value="${cfg.bays}" onchange="updateAisleParam('${escapeHTML(aisle)}', 'bays', this.value)"></td>
-            <td style="text-align:center;"><input type="number" class="form-control mono" style="width:70px; text-align:center; display:inline-block;" value="${cfg.shelves}" onchange="updateAisleParam('${escapeHTML(aisle)}', 'shelves', this.value)"></td>
-            <td style="text-align:center;"><input type="number" class="form-control mono" style="width:70px; text-align:center; display:inline-block;" value="${cfg.slots}" onchange="updateAisleParam('${escapeHTML(aisle)}', 'slots', this.value)"></td>
-            <td style="text-align:center;" class="mono font-bold">${count} เครื่อง</td>
-            <td style="text-align:center;">
-                <div style="display:flex; justify-content:center; gap:4px;">
-                    <button class="btn btn-sm btn-secondary" onclick="moveAisleOrder(${idx}, -1)" ${idx === 0 ? 'disabled' : ''} title="เลื่อนขึ้น"><i class="fa-solid fa-arrow-up"></i></button>
-                    <button class="btn btn-sm btn-secondary" onclick="moveAisleOrder(${idx}, 1)" ${idx === masterAisles.length - 1 ? 'disabled' : ''} title="เลื่อนลง"><i class="fa-solid fa-arrow-down"></i></button>
-                </div>
-            </td>
-            <td style="text-align:center;">
-                <button class="btn btn-sm ${isLocked ? 'btn-secondary' : 'btn-primary'}" onclick="toggleAisleLock('${escapeHTML(aisle)}')">
-                    <i class="fa-solid ${isLocked ? 'fa-lock' : 'fa-lock-open'}"></i> ${isLocked ? 'ปลดล็อก' : 'ล็อก'}
-                </button>
-            </td>
-            <td style="text-align:center;">
-                <button class="btn btn-sm btn-danger" onclick="verifyAndDeleteAisle('${escapeHTML(aisle)}')" ${isLocked ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : ''}>
-                    <i class="fa-solid fa-trash"></i> ลบ
-                </button>
-            </td>
-        `;
-        tbody.appendChild(tr);
-    });
+    try {
+        client
+            .channel('public_system_settings_changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'system_settings' }, (payload) => {
+                if (payload.new && payload.new.key === 'aisle_configs') {
+                    let val = payload.new.value;
+                    if (typeof val === 'string') {
+                        try { val = JSON.parse(val); } catch(e) {}
+                    }
+                    if (val && Array.isArray(val.aisles)) {
+                        window.masterAisles = val.aisles;
+                        window.aisleConfigs = val.configs || {};
+                        renderAisleSettingsTable();
+                        if (typeof populateAisleDropdowns === 'function') populateAisleDropdowns();
+                        if (typeof refreshLocationVisualizerIfActive === 'function') refreshLocationVisualizerIfActive();
+                    }
+                } else if (payload.new && payload.new.key === 'menu_db_mapping') {
+                    let mapVal = payload.new.value;
+                    if (typeof mapVal === 'string') {
+                        try { mapVal = JSON.parse(mapVal); } catch(e) {}
+                    }
+                    if (Array.isArray(mapVal)) {
+                        menuDbMappingData = mapVal;
+                        renderMenuDatabaseMappingTable();
+                    }
+                }
+            })
+            .subscribe();
+    } catch (e) {
+        console.warn("⚠️ ไม่สามารถเริ่มระบบ Realtime Listener ได้:", e);
+    }
 }
 
-// 🟢 ฟังก์ชันเลื่อนตำแหน่งแถวขึ้น-ลง พร้อมบันทึกจำค่าล่าสุดเข้าฐานข้อมูลทันที 100%
-function moveAisleOrder(index, direction) {
+/**
+ * 🟢 ฟังก์ชันเลื่อนตำแหน่งแถวขึ้น-ลง พร้อมบันทึกพิกัดลง DB ทันที
+ */
+async function moveAisleOrder(index, direction) {
     const targetIndex = index + direction;
-    if (targetIndex < 0 || targetIndex >= masterAisles.length) return;
+    if (targetIndex < 0 || targetIndex >= window.masterAisles.length) return;
 
-    const temp = masterAisles[index];
-    masterAisles[index] = masterAisles[targetIndex];
-    masterAisles[targetIndex] = temp;
-
-    renderAisleSettingsTable();
-    populateAisleDropdowns();
-    refreshLocationVisualizerIfActive();
-    
-    // บันทึกลำดับตำแหน่งล่าสุดลงฐานข้อมูลทันทีอัตโนมัติ
-    saveAllWarehouseConfigsToDB();
-    showToast("🔄 บันทึกสลับลำดับตำแหน่งล่าสุดลง DB แล้ว");
-}
-
-// 🟢 สลับสถานะการล็อกโครงสร้างหลัก
-function toggleAisleLock(aisle) {
-    if (!aisleConfigs[aisle]) aisleConfigs[aisle] = { bays: 10, shelves: 1, slots: 10, is_locked: false };
-    aisleConfigs[aisle].is_locked = !aisleConfigs[aisle].is_locked;
+    const temp = window.masterAisles[index];
+    window.masterAisles[index] = window.masterAisles[targetIndex];
+    window.masterAisles[targetIndex] = temp;
 
     renderAisleSettingsTable();
-    saveAllWarehouseConfigsToDB();
-    showToast(`🔒 อัปเดตสถานะล็อกแถว ${aisle} เรียบร้อย`);
+    if (typeof populateAisleDropdowns === 'function') populateAisleDropdowns();
+    if (typeof refreshLocationVisualizerIfActive === 'function') refreshLocationVisualizerIfActive();
+
+    await saveAllWarehouseConfigsToDB();
 }
 
-// 🟢 ป้องกันการลบพลาดโดยต้องใส่รหัสยืนยันก่อน
-function verifyAndDeleteAisle(aisle) {
-    const cfg = aisleConfigs[aisle];
+/**
+ * 🟢 สลับสถานะ ล็อก / ปลดล็อก โครงสร้างแถว พร้อมบันทึก DB
+ */
+async function toggleAisleLock(aisle) {
+    if (!window.aisleConfigs[aisle]) {
+        window.aisleConfigs[aisle] = { bays: 10, shelves: 1, slots: 10, is_locked: false };
+    }
+    window.aisleConfigs[aisle].is_locked = !window.aisleConfigs[aisle].is_locked;
+
+    renderAisleSettingsTable();
+    await saveAllWarehouseConfigsToDB();
+}
+
+/**
+ * 🟢 อัปเดตพารามิเตอร์ของแถว (จำนวนล็อก ชั้น ช่อง) พร้อมบันทึก DB
+ */
+async function updateAisleParam(aisle, key, val) {
+    if (!window.aisleConfigs[aisle]) {
+        window.aisleConfigs[aisle] = { bays: 10, shelves: 1, slots: 10, is_locked: false };
+    }
+    window.aisleConfigs[aisle][key] = parseInt(val) || 1;
+    await saveAllWarehouseConfigsToDB();
+}
+
+/**
+ * 🟢 เพิ่มแถวจัดเก็บใหม่ พร้อมบันทึก DB
+ */
+async function addNewAisleConfig() {
+    const input = document.getElementById('newAisleInput');
+    if (!input) return;
+
+    const aisleName = input.value.trim().toUpperCase();
+    if (!aisleName || window.masterAisles.includes(aisleName)) return;
+
+    window.masterAisles.push(aisleName);
+    window.aisleConfigs[aisleName] = { bays: 10, shelves: 1, slots: 10, is_locked: false };
+    input.value = '';
+
+    renderAisleSettingsTable();
+    if (typeof populateAisleDropdowns === 'function') populateAisleDropdowns();
+    if (typeof refreshLocationVisualizerIfActive === 'function') refreshLocationVisualizerIfActive();
+    await saveAllWarehouseConfigsToDB();
+}
+
+/**
+ * 🟢 ยืนยันรหัสผ่านและลบแถวจัดเก็บ พร้อมบันทึก DB
+ */
+async function verifyAndDeleteAisle(aisle) {
+    const cfg = window.aisleConfigs[aisle];
     if (cfg && cfg.is_locked) {
         alert(`⚠️ แถว ${aisle} ถูกล็อกไว้เป็นโครงสร้างหลัก ไม่สามารถลบได้ กรุณาปลดล็อกก่อน`);
         return;
@@ -178,66 +320,114 @@ function verifyAndDeleteAisle(aisle) {
     const pinCode = prompt(`🔐 ป้องกันการลบพลาด: กรุณากรอกรหัสผ่านยืนยันเพื่อลบแถว "${aisle}" (พิมพ์รหัส: 1234 หรือรหัสผ่านแอดมิน):`);
     if (pinCode === null) return;
 
-    if (pinCode !== '1234' && (!currentUser || pinCode !== (currentUser.password || '123456'))) {
-        playErrorSound();
+    if (pinCode !== '1234' && (typeof currentUser === 'undefined' || !currentUser || pinCode !== (currentUser.password || '123456'))) {
+        if (typeof playErrorSound === 'function') playErrorSound();
         alert("❌ รหัสยืนยันไม่ถูกต้อง! ยกเลิกการลบแถว");
         return;
     }
 
     if (confirm(`คุณแน่ใจอย่างยิ่งใช่หรือไม่ว่าต้องการลบแถว ${aisle} ออกจากระบบ?`)) {
-        masterAisles = masterAisles.filter(a => a !== aisle);
-        delete aisleConfigs[aisle];
+        window.masterAisles = window.masterAisles.filter(a => a !== aisle);
+        delete window.aisleConfigs[aisle];
         renderAisleSettingsTable();
-        populateAisleDropdowns();
-        saveAllWarehouseConfigsToDB();
-        playSuccessSound();
-        showToast(`🗑️ ลบแถว ${aisle} เรียบร้อยแล้ว`);
+        if (typeof populateAisleDropdowns === 'function') populateAisleDropdowns();
+        if (typeof refreshLocationVisualizerIfActive === 'function') refreshLocationVisualizerIfActive();
+        await saveAllWarehouseConfigsToDB();
+        if (typeof playSuccessSound === 'function') playSuccessSound();
     }
 }
 
+/**
+ * 🟢 เรนเดอร์ตารางการตั้งค่าแถวจัดเก็บ
+ */
+function renderAisleSettingsTable() {
+    const tbody = document.getElementById('aisleSettingsTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    const invData = (typeof globalInventoryData !== 'undefined' && Array.isArray(globalInventoryData)) ? globalInventoryData : [];
+
+    window.masterAisles.forEach((aisle, idx) => {
+        const cfg = window.aisleConfigs[aisle] || { bays: 10, shelves: 1, slots: 10, is_locked: false };
+        const count = invData.filter(i => (i.location || '').toUpperCase().startsWith(`${aisle}-`) || (i.location || '').toUpperCase() === aisle).length;
+        const isLocked = Boolean(cfg.is_locked);
+        const safeAisle = typeof escapeHTML === 'function' ? escapeHTML(aisle) : aisle;
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td style="text-align:center; font-weight:700;" class="mono">${idx + 1}</td>
+            <td>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <strong class="mono" style="font-size:1.05rem; color:var(--primary-text);">${safeAisle}</strong>
+                    ${isLocked ? '<span class="badge-action inbound" style="font-size:0.72rem; padding:2px 8px;"><i class="fa-solid fa-lock"></i> ล็อก</span>' : ''}
+                </div>
+            </td>
+            <td style="text-align:center;"><input type="number" class="form-control mono" style="width:65px; text-align:center; display:inline-block;" value="${cfg.bays}" onchange="updateAisleParam('${safeAisle}', 'bays', this.value)"></td>
+            <td style="text-align:center;"><input type="number" class="form-control mono" style="width:65px; text-align:center; display:inline-block;" value="${cfg.shelves}" onchange="updateAisleParam('${safeAisle}', 'shelves', this.value)"></td>
+            <td style="text-align:center;"><input type="number" class="form-control mono" style="width:65px; text-align:center; display:inline-block;" value="${cfg.slots}" onchange="updateAisleParam('${safeAisle}', 'slots', this.value)"></td>
+            <td style="text-align:center;" class="mono font-bold">${count} เครื่อง</td>
+            <td style="text-align:center;">
+                <div style="display:flex; justify-content:center; gap:4px;">
+                    <button class="btn btn-sm btn-secondary" onclick="moveAisleOrder(${idx}, -1)" ${idx === 0 ? 'disabled style="opacity:0.3; cursor:not-allowed;"' : ''} title="เลื่อนตำแหน่งขึ้น">
+                        <i class="fa-solid fa-arrow-up"></i>
+                    </button>
+                    <button class="btn btn-sm btn-secondary" onclick="moveAisleOrder(${idx}, 1)" ${idx === window.masterAisles.length - 1 ? 'disabled style="opacity:0.3; cursor:not-allowed;"' : ''} title="เลื่อนตำแหน่งลง">
+                        <i class="fa-solid fa-arrow-down"></i>
+                    </button>
+                </div>
+            </td>
+            <td style="text-align:center;">
+                <button class="btn btn-sm ${isLocked ? 'btn-secondary' : 'btn-primary'}" onclick="toggleAisleLock('${safeAisle}')">
+                    <i class="fa-solid ${isLocked ? 'fa-lock' : 'fa-lock-open'}"></i> ${isLocked ? 'ปลดล็อก' : 'ล็อก'}
+                </button>
+            </td>
+            <td style="text-align:center;">
+                <button class="btn btn-sm btn-danger" onclick="verifyAndDeleteAisle('${safeAisle}')" ${isLocked ? 'disabled style="opacity:0.4; cursor:not-allowed;" title="โครงสร้างถูกล็อกไว้"' : ''}>
+                    <i class="fa-solid fa-trash"></i> ลบ
+                </button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+/**
+ * 🟢 เรนเดอร์ตารางรายงานการเชื่อมต่อฐานข้อมูล
+ */
 function renderMenuDatabaseMappingTable() {
     const tbody = document.getElementById('menuDbMappingTableBody');
     if (!tbody) return;
 
     let html = '';
-    MENU_DATABASE_MAPPING.forEach((item, idx) => {
+    menuDbMappingData.forEach((item, idx) => {
+        const safeTitle = typeof escapeHTML === 'function' ? escapeHTML(item.menuTitle) : item.menuTitle;
+        const safeTable = typeof escapeHTML === 'function' ? escapeHTML(item.dbTable) : item.dbTable;
+        const safeStatus = typeof escapeHTML === 'function' ? escapeHTML(item.status) : item.status;
+        const safeDesc = typeof escapeHTML === 'function' ? escapeHTML(item.desc) : item.desc;
+
         html += `
             <tr>
                 <td style="text-align:center;" class="mono">${idx + 1}</td>
-                <td><strong>${escapeHTML(item.menuTitle)}</strong></td>
-                <td><code class="mono font-bold" style="color:var(--primary-text);">${escapeHTML(item.dbTable)}</code></td>
-                <td><span class="badge-action inbound"><i class="fa-solid fa-circle-dot"></i> ${escapeHTML(item.status)}</span></td>
-                <td style="font-size:0.84rem; color:var(--text-sub);">${escapeHTML(item.desc)}</td>
+                <td><strong>${safeTitle}</strong></td>
+                <td><code class="mono font-bold" style="color:var(--primary-text);">${safeTable}</code></td>
+                <td><span class="badge-action inbound"><i class="fa-solid fa-circle-dot"></i> ${safeStatus}</span></td>
+                <td style="font-size:0.84rem; color:var(--text-sub);">${safeDesc}</td>
             </tr>
         `;
     });
     tbody.innerHTML = html;
 }
 
-function updateAisleParam(aisle, key, val) {
-    if(!aisleConfigs[aisle]) aisleConfigs[aisle] = { bays:10, shelves:1, slots:10, is_locked:false };
-    aisleConfigs[aisle][key] = parseInt(val) || 1;
-    saveAllWarehouseConfigsToDB();
-}
+// ผูกฟังก์ชันลง Global Scope
+window.saveAllWarehouseConfigsToDB = saveAllWarehouseConfigsToDB;
+window.loadWarehouseConfigsFromDB = loadWarehouseConfigsFromDB;
+window.moveAisleOrder = moveAisleOrder;
+window.toggleAisleLock = toggleAisleLock;
+window.addNewAisleConfig = addNewAisleConfig;
+window.verifyAndDeleteAisle = verifyAndDeleteAisle;
+window.updateAisleParam = updateAisleParam;
 
-function addNewAisleConfig() {
-    const input = document.getElementById('newAisleInput');
-    if (!input) return;
-
-    const aisleName = input.value.trim().toUpperCase();
-    if (!aisleName || masterAisles.includes(aisleName)) return;
-
-    masterAisles.push(aisleName);
-    aisleConfigs[aisleName] = { bays: 10, shelves: 1, slots: 10, is_locked: false };
-    input.value = '';
-
-    renderAisleSettingsTable();
-    populateAisleDropdowns();
-    refreshLocationVisualizerIfActive();
-    saveAllWarehouseConfigsToDB();
-    showToast(`✨ เพิ่มแถว ${aisleName} เรียบร้อยแล้ว`);
-}
-
-function deleteAisleConfig(aisle) {
-    verifyAndDeleteAisle(aisle);
-}
+document.addEventListener('DOMContentLoaded', () => {
+    loadWarehouseConfigsFromDB();
+    initWarehouseSettingsRealtime();
+});

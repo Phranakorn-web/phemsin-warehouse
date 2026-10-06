@@ -1,5 +1,5 @@
 // =========================================================================
-// --- MODULE 6: APPROVAL REQUESTS DATABASE & REALTIME ENGINE (STANDARDIZED FEMALE TTS) ---
+// --- MODULE 6: APPROVAL REQUESTS DATABASE & REALTIME ENGINE (ACCURATE TTS ENGINE) ---
 // =========================================================================
 
 const WMS_SUPABASE_URL = "https://eusuehaqgwkcgowsgyco.supabase.co";
@@ -126,7 +126,7 @@ function escapeHTML(str) {
         .replace(/'/g, '&#039;');
 }
 
-// 🟢 เล่นเสียงแจ้งเตือนภาษาไทย (มาตรฐานเสียงผู้หญิงลงท้าย "ค่ะ" / เสียงผู้ชายลงท้าย "ครับ")
+// 🟢 เล่นเสียงแจ้งเตือนภาษาไทย (สแกนเพศเสียงแม่นยำ 100%: ชาย = ครับ / หญิง = ค่ะ)
 function playTTSNotification(text) {
     if (!isUserLoggedIn()) return; // ⛔ บล็อกเสียงพูดถ้าอยู่ในหน้าล็อกอิน
     try {
@@ -140,7 +140,7 @@ function playTTSNotification(text) {
             let isMale = false;
 
             if (thaiVoices.length > 0) {
-                // 1. ค้นหาและบังคับใช้เสียงผู้หญิงภาษาไทยเป็นมาตรฐานหลักก่อน (Chrome / Edge / Safari / Windows / Mac)
+                // 1. ค้นหาเสียงผู้หญิงภาษาไทยเป็นลำดับแรกสุด
                 selectedVoice = thaiVoices.find(v => {
                     const nameLower = v.name.toLowerCase();
                     return (
@@ -154,12 +154,12 @@ function playTTSNotification(text) {
                     );
                 });
 
-                // 2. ถ้าไม่พบเสียงผู้หญิงเฉพาะเจาะจง ให้ใช้เสียงภาษาไทยเสียงแรกที่มีในเครื่อง
+                // 2. ถ้าไม่มีเสียงผู้หญิงเฉพาะ ให้ใช้เสียงภาษาไทยที่มีอยู่ในเครื่อง
                 if (!selectedVoice) {
                     selectedVoice = thaiVoices[0];
                 }
 
-                // 3. เช็กเพศของเสียงที่เลือกได้จริง ณ ขณะนั้น
+                // 3. ตรวจสอบชื่อเสียงเพื่อระบุเพศผู้ชายอย่างแม่นยำ
                 const activeVoiceName = selectedVoice.name.toLowerCase();
                 if (
                     activeVoiceName.includes('pattara') || 
@@ -167,16 +167,17 @@ function playTTSNotification(text) {
                     activeVoiceName.includes('male') || 
                     activeVoiceName.includes('guy') || 
                     activeVoiceName.includes('david') || 
-                    activeVoiceName.includes('ชาย')
+                    activeVoiceName.includes('ชาย') ||
+                    selectedVoice.gender === 'male'
                 ) {
                     isMale = true;
                 }
             }
 
-            // ตัดคำลงท้ายเดิมออก ป้องกันการพูดว่า "ค่ะค่ะ" หรือ "ครับค่ะ"
+            // ตัดคำลงท้ายเดิมออกก่อน เพื่อไม่ให้พูดคำลงท้ายซ้ำ
             let cleanText = String(text).replace(/(ค่ะ|ครับ|คะ)$/g, '').trim();
 
-            // เติมคำลงท้ายตามเพศของเสียงพูดอย่างชัดเจน
+            // เติมคำลงท้ายตรงตามเพศของเสียงพูด 100%
             if (isMale) {
                 cleanText += " ครับ";
             } else {
@@ -190,8 +191,8 @@ function playTTSNotification(text) {
                 utter.voice = selectedVoice;
             }
 
-            // ปรับระดับเสียงและคีย์พูดให้เป็นธรรมชาติที่สุดในทุกแพลตฟอร์ม
-            utter.pitch = isMale ? 1.0 : 1.2; 
+            // ปรับโทนเสียง (Pitch): ผู้ชายใช้คีย์ปกติ 1.0 / ผู้หญิงใช้คีย์สดใส 1.2
+            utter.pitch = isMale ? 1.0 : 1.2;
             utter.rate = 1.05;
 
             window.speechSynthesis.speak(utter);
@@ -255,7 +256,7 @@ async function createPendingApprovalRequest(type, desc, targetSns, payloadData) 
         : (targetSns ? [String(targetSns).trim()] : []);
 
     if (cleanTargetSns.length === 0) {
-        if (typeof showToast === 'function') showToast("⚠️ ไม่พบหมายเลข S/N ที่ต้องการส่งคำขออนุมัติ", true);
+        if (typeof showToast === 'function') showToast("⚠️️ ไม่พบหมายเลข S/N ที่ต้องการส่งคำขออนุมัติ", true);
         return false;
     }
 

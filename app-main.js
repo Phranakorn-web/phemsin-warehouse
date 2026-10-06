@@ -733,7 +733,7 @@ async function submitRelocateLocation() {
 
 function requestBatchRelocateModal() {
     if (selectedItemSnSet.size === 0) {
-        alert("⚠️ กรุณาติ๊กเลือกรายการสินค้าในตารางอย่างน้อย 1 รายการเพื่อย้าย");
+        alert("⚠️️ กรุณาติ๊กเลือกรายการสินค้าในตารางอย่างน้อย 1 รายการเพื่อย้าย");
         return;
     }
 
@@ -903,7 +903,7 @@ function executeExcelExport() {
     }
 
     if (dataToExport.length === 0) {
-        alert("⚠️️ ไม่พบข้อมูลสำหรับส่งออก Excel");
+        alert("⚠ ไม่พบข้อมูลสำหรับส่งออก Excel");
         return;
     }
 
@@ -955,59 +955,248 @@ function closePrintBarcodeModal() {
 function updatePrintPreviewLayout() {
     const size = document.getElementById('thermalSizeSelect').value;
     const container = document.getElementById('barcodePreviewArea');
+    if (!container) return;
+
     container.innerHTML = '';
 
-    if (currentPrintBarcodeList.length === 0) return;
+    if (currentPrintBarcodeList.length === 0) {
+        container.className = 'thermal-label-container';
+        container.innerHTML = `<div style="text-align:center; padding:30px; color:#64748b; font-weight:600;">ไม่พบรายการสติ๊กเกอร์สำหรับแสดงผล</div>`;
+        return;
+    }
 
-    let cardClass = 'thermal-card-50x30';
-    if (size === '40x30') cardClass = 'thermal-card-40x30';
-    else if (size === '100x75') cardClass = 'thermal-card-100x75';
-    else if (size === '100x150') cardClass = 'thermal-card-100x150';
-    else if (size === 'A4') cardClass = 'thermal-card-a4-grid';
+    if (size === 'A4') {
+        container.className = 'thermal-label-container mode-a4';
+        const pageSize = 24;
+        const totalPages = Math.ceil(currentPrintBarcodeList.length / pageSize);
 
-    currentPrintBarcodeList.forEach((item, idx) => {
-        const card = document.createElement('div');
-        card.className = `barcode-card-box ${cardClass}`;
-        const svgId = `barcode-svg-${idx}`;
+        for (let pageIdx = 0; pageIdx < totalPages; pageIdx++) {
+            const pageItems = currentPrintBarcodeList.slice(pageIdx * pageSize, (pageIdx + 1) * pageSize);
 
-        card.innerHTML = `
-            <div style="font-weight:800; font-size:0.75rem; color:#000;" class="text-multiline-truncate">${escapeHTML(item.name || item.category)}</div>
-            <div class="barcode-svg-container"><svg id="${svgId}"></svg></div>
-            <div style="display:flex; justify-content:space-between; font-size:0.7rem; font-weight:700; color:#000;" class="mono">
-                <span>SKU: ${escapeHTML(item.category || 'N/A')}</span>
-                <span>📍 ${escapeHTML(formatLocationCode(item.location))}</span>
-            </div>
-        `;
-        container.appendChild(card);
+            const pageLabel = document.createElement('div');
+            pageLabel.style.cssText = 'width:100%; text-align:center; font-weight:700; font-size:0.85rem; color:#334155; margin-top:10px;';
+            pageLabel.innerHTML = `<i class="fa-solid fa-file-lines" style="color:var(--primary);"></i> ตัวอย่างกระดาษ A4 หน้าที่ ${pageIdx + 1} / ${totalPages} (จัดเรียง 3 คอลัมน์ × 8 แถว = ${pageItems.length} บาร์โค้ด)`;
+            container.appendChild(pageLabel);
 
-        try {
-            JsBarcode(`#${svgId}`, item.sn, {
-                format: "CODE128",
-                width: 1.6,
-                height: 38,
-                displayValue: true,
-                fontSize: 12,
-                margin: 2
+            const pageDiv = document.createElement('div');
+            pageDiv.className = 'a4-page-sheet';
+
+            pageItems.forEach((item, itemIdx) => {
+                const globalIdx = pageIdx * pageSize + itemIdx;
+                const card = document.createElement('div');
+                card.className = 'barcode-card-box thermal-card-a4-grid';
+                const svgId = `barcode-svg-${globalIdx}`;
+
+                card.innerHTML = `
+                    <div style="font-weight:800; font-size:0.68rem; color:#000; line-height:1.1; max-height:2.2em; overflow:hidden; width:100%;" class="text-multiline-truncate" title="${escapeHTML(item.name || item.category)}">${escapeHTML(item.name || item.category)}</div>
+                    <div class="barcode-svg-container"><svg id="${svgId}"></svg></div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; width:100%; font-size:0.6rem; font-weight:700; color:#000;" class="mono">
+                        <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:55%;">SKU: ${escapeHTML(item.category || 'N/A')}</span>
+                        <span>📍 ${escapeHTML(formatLocationCode(item.location))}</span>
+                    </div>
+                `;
+                pageDiv.appendChild(card);
             });
-        } catch (e) {}
-    });
+
+            container.appendChild(pageDiv);
+
+            pageItems.forEach((item, itemIdx) => {
+                const globalIdx = pageIdx * pageSize + itemIdx;
+                const svgId = `barcode-svg-${globalIdx}`;
+                try {
+                    JsBarcode(`#${svgId}`, item.sn, {
+                        format: "CODE128",
+                        width: 1.1,
+                        height: 24,
+                        displayValue: true,
+                        fontSize: 9,
+                        margin: 1
+                    });
+                } catch (e) {
+                    console.warn("JsBarcode Error:", e);
+                }
+            });
+        }
+    } else {
+        container.className = 'thermal-label-container mode-thermal';
+        let cardClass = 'thermal-card-50x30';
+        let bcWidth = 1.3, bcHeight = 30, bcFontSize = 10, bcMargin = 1;
+
+        if (size === '40x30') {
+            cardClass = 'thermal-card-40x30';
+            bcWidth = 1.1; bcHeight = 22; bcFontSize = 9; bcMargin = 0;
+        } else if (size === '100x75') {
+            cardClass = 'thermal-card-100x75';
+            bcWidth = 2.0; bcHeight = 58; bcFontSize = 14; bcMargin = 3;
+        } else if (size === '100x150') {
+            cardClass = 'thermal-card-100x150';
+            bcWidth = 2.2; bcHeight = 95; bcFontSize = 16; bcMargin = 4;
+        }
+
+        currentPrintBarcodeList.forEach((item, idx) => {
+            const card = document.createElement('div');
+            card.className = `barcode-card-box ${cardClass}`;
+            const svgId = `barcode-svg-${idx}`;
+
+            card.innerHTML = `
+                <div style="font-weight:800; font-size:0.75rem; color:#000; line-height:1.15; max-height:2.3em; overflow:hidden; width:100%;" class="text-multiline-truncate" title="${escapeHTML(item.name || item.category)}">${escapeHTML(item.name || item.category)}</div>
+                <div class="barcode-svg-container"><svg id="${svgId}"></svg></div>
+                <div style="display:flex; justify-content:space-between; align-items:center; width:100%; font-size:0.68rem; font-weight:700; color:#000;" class="mono">
+                    <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:55%;">SKU: ${escapeHTML(item.category || 'N/A')}</span>
+                    <span>📍 ${escapeHTML(formatLocationCode(item.location))}</span>
+                </div>
+            `;
+            container.appendChild(card);
+
+            try {
+                JsBarcode(`#${svgId}`, item.sn, {
+                    format: "CODE128",
+                    width: bcWidth,
+                    height: bcHeight,
+                    displayValue: true,
+                    fontSize: bcFontSize,
+                    margin: bcMargin
+                });
+            } catch (e) {
+                console.warn("JsBarcode Error:", e);
+            }
+        });
+    }
 }
 
+// 🟢 ปรับปรุงเอนจินส่งคำสั่งพิมพ์กระดาษ A4 ต่อเนื่อง โดยสกัดเฉพาะ .a4-page-sheet ไม่แทรกหน้าว่าง
 function triggerPDFPrintPreview() {
-    const printContents = document.getElementById('barcodePreviewArea').innerHTML;
+    const size = document.getElementById('thermalSizeSelect').value;
+    const previewContainer = document.getElementById('barcodePreviewArea');
+    if (!previewContainer) return;
+
+    let printContents = '';
+
+    if (size === 'A4') {
+        const sheets = previewContainer.querySelectorAll('.a4-page-sheet');
+        sheets.forEach(sheet => {
+            printContents += sheet.outerHTML;
+        });
+    } else {
+        const cards = previewContainer.querySelectorAll('.barcode-card-box');
+        cards.forEach(card => {
+            printContents += card.outerHTML;
+        });
+    }
+
     const printWindow = window.open('', '_blank');
+
+    let pageStyle = '';
+    if (size === 'A4') {
+        pageStyle = `
+            @page { size: A4 portrait; margin: 0; }
+            html, body {
+                margin: 0 !important;
+                padding: 0 !important;
+                background: #fff !important;
+                color: #000 !important;
+                width: 210mm !important;
+                height: 100% !important;
+            }
+            #barcodePreviewArea { margin: 0 !important; padding: 0 !important; }
+            .a4-page-sheet {
+                width: 210mm !important;
+                height: 296.5mm !important;
+                max-height: 296.5mm !important;
+                padding: 5mm 5mm !important;
+                margin: 0 !important;
+                box-shadow: none !important;
+                border: none !important;
+                display: grid !important;
+                grid-template-columns: repeat(3, 1fr) !important;
+                grid-template-rows: repeat(8, 1fr) !important;
+                gap: 2.5mm 3.5mm !important;
+                page-break-after: always !important;
+                break-after: page !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+                box-sizing: border-box !important;
+                background: #fff !important;
+                overflow: hidden !important;
+            }
+            .a4-page-sheet:last-child {
+                page-break-after: auto !important;
+                break-after: auto !important;
+            }
+            .thermal-card-a4-grid {
+                width: 100% !important;
+                height: 100% !important;
+                margin: 0 !important;
+                border: 1px solid #000 !important;
+                border-radius: 3px !important;
+                padding: 3px 4px !important;
+                box-sizing: border-box !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: space-between !important;
+                align-items: center !important;
+                text-align: center !important;
+                overflow: hidden !important;
+                background: #fff !important;
+            }
+        `;
+    } else {
+        let widthMm = 50, heightMm = 30;
+        if (size === '40x30') { widthMm = 40; heightMm = 30; }
+        else if (size === '100x75') { widthMm = 100; heightMm = 75; }
+        else if (size === '100x150') { widthMm = 100; heightMm = 150; }
+
+        pageStyle = `
+            @page { size: ${widthMm}mm ${heightMm}mm; margin: 0; }
+            html, body { margin: 0; padding: 0; background: #fff !important; color: #000 !important; }
+            #barcodePreviewArea { display: block !important; padding: 0 !important; gap: 0 !important; }
+            .barcode-card-box {
+                width: ${widthMm}mm !important;
+                height: ${heightMm}mm !important;
+                margin: 0 !important;
+                padding: 2mm !important;
+                box-sizing: border-box !important;
+                page-break-after: always !important;
+                break-after: page !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+                border: 1px solid #000 !important;
+                border-radius: 0 !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: space-between !important;
+                align-items: center !important;
+                text-align: center !important;
+                overflow: hidden !important;
+                background: #fff !important;
+            }
+        `;
+    }
+
     printWindow.document.write(`
+        <!DOCTYPE html>
         <html>
             <head>
-                <title>Print Barcode Stickers</title>
+                <title>พิมพ์บาร์โค้ดสติ๊กเกอร์ (WMS Enterprise)</title>
                 <link rel="stylesheet" href="style.css">
                 <style>
-                    body { background: #fff !important; color: #000 !important; padding: 10px; }
-                    .barcode-card-box { page-break-inside: avoid; }
+                    ${pageStyle}
+                    .barcode-svg-container {
+                        display: flex !important;
+                        justify-content: center !important;
+                        align-items: center !important;
+                        width: 100% !important;
+                        overflow: hidden !important;
+                    }
+                    .barcode-svg-container svg {
+                        max-width: 100% !important;
+                        height: auto !important;
+                    }
+                    .mono { font-family: 'JetBrains Mono', monospace, monospace; }
                 </style>
             </head>
             <body>
-                <div class="thermal-label-container">
+                <div id="barcodePreviewArea">
                     ${printContents}
                 </div>
             </body>
@@ -1018,7 +1207,7 @@ function triggerPDFPrintPreview() {
     setTimeout(() => {
         printWindow.print();
         printWindow.close();
-    }, 500);
+    }, 600);
 
     closePrintBarcodeModal();
 }

@@ -717,53 +717,100 @@ tbody tr:hover td { background-color: var(--bg-subtle); }
 .view-section { display: none; }
 .view-section.active { display: block; }
 
+/* =========================================================================
+   --- BARCODE PREVIEW & PRINT ENGINE STYLES (EXACT A4 NO-BLANK-PAGE FIX) ---
+   ========================================================================= */
+
 .thermal-label-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    justify-content: center;
-    padding: 10px;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+.thermal-label-container.mode-a4 {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 20px !important;
+}
+
+.thermal-label-container.mode-thermal {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+}
+
+/* 📄 โครงสร้างกระดาษ A4 Grid (ปรับขนาด 296.5mm ล็อกขอบแน่นหนา แก้ไขหน้าว่าง) */
+.a4-page-sheet {
+    width: 210mm !important;
+    max-width: 100% !important;
+    height: 296.5mm !important;
+    max-height: 296.5mm !important;
+    padding: 5mm 5mm !important;
+    box-sizing: border-box !important;
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    grid-template-rows: repeat(8, 1fr) !important;
+    gap: 2.5mm 3.5mm !important;
+    background: #ffffff !important;
+    border: 1px dashed #94a3b8 !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12) !important;
+    margin: 0 auto 15px auto !important;
+    overflow: hidden !important;
+    page-break-after: always !important;
+    break-after: page !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+}
+
+.a4-page-sheet:last-child {
+    page-break-after: auto !important;
+    break-after: auto !important;
 }
 
 .barcode-card-box {
-    border: 2px solid #0f172a !important;
-    border-radius: 6px;
-    padding: 8px;
-    background: #ffffff;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    text-align: center;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.08);
-    overflow: hidden;
-    color: #000;
+    border: 1.5px solid #0f172a !important;
+    border-radius: 4px !important;
+    padding: 4px !important;
+    background: #ffffff !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    text-align: center !important;
+    overflow: hidden !important;
+    color: #000000 !important;
 }
-
-.thermal-card-50x30 { width: 210px; height: 125px; page-break-after: always; page-break-inside: avoid; }
-.thermal-card-40x30 { width: 170px; height: 115px; page-break-after: always; page-break-inside: avoid; }
-.thermal-card-100x75 { width: 360px; height: 240px; page-break-after: always; page-break-inside: avoid; }
-.thermal-card-100x150 { width: 360px; height: 490px; page-break-after: always; page-break-inside: avoid; }
 
 .thermal-card-a4-grid {
-    width: 48% !important;
-    height: 180px !important;
-    margin: 1% !important;
+    width: 100% !important;
+    height: 100% !important;
+    margin: 0 !important;
     box-sizing: border-box !important;
-    float: left !important;
-    page-break-inside: avoid !important;
 }
 
+.thermal-card-50x30 { width: 200px !important; height: 120px !important; page-break-after: always !important; break-after: page; }
+.thermal-card-40x30 { width: 165px !important; height: 110px !important; page-break-after: always !important; break-after: page; }
+.thermal-card-100x75 { width: 340px !important; height: 230px !important; page-break-after: always !important; break-after: page; }
+.thermal-card-100x150 { width: 340px !important; height: 480px !important; page-break-after: always !important; break-after: page; }
+
 .barcode-svg-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    overflow: hidden;
+    width: 100% !important;
+    max-width: 100% !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    overflow: hidden !important;
+    margin: 1px 0 !important;
 }
+
 .barcode-svg-container svg {
+    width: 100% !important;
     max-width: 100% !important;
     height: auto !important;
+    display: block !important;
 }
 
 @media (max-width: 992px) {

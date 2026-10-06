@@ -1,5 +1,5 @@
 // =========================================================================
-// --- MODULE 6: APPROVAL REQUESTS DATABASE & REALTIME ENGINE (NO-LOGIN NOTIFICATION BLOCK) ---
+// --- MODULE 6: APPROVAL REQUESTS DATABASE & REALTIME ENGINE (FEMALE VOICE ENHANCED) ---
 // =========================================================================
 
 const WMS_SUPABASE_URL = "https://eusuehaqgwkcgowsgyco.supabase.co";
@@ -12,11 +12,22 @@ let approvalRealtimeChannel = null;
 let userTrackedRequestStatuses = {};
 const LOCAL_APPROVALS_KEY = 'wms_local_pending_approvals_v2';
 
+// 🟢 โหลดรายการเสียงของระบบล่วงหน้าสำหรับ Windows/Mac/Android/iOS
+let availableTTSVoices = [];
+function preloadTTSVoices() {
+    if ('speechSynthesis' in window) {
+        availableTTSVoices = window.speechSynthesis.getVoices();
+    }
+}
+if ('speechSynthesis' in window) {
+    preloadTTSVoices();
+    window.speechSynthesis.onvoiceschanged = preloadTTSVoices;
+}
+
 // -------------------------------------------------------------------------
 // 0. ตรวจสอบสถานะว่าผู้ใช้เข้าสู่ระบบสำเร็จแล้วหรือยัง (บล็อกแจ้งเตือนในหน้า Login 100%)
 // -------------------------------------------------------------------------
 function isUserLoggedIn() {
-    // 1. เช็กตัวป้อนรหัสผ่านหรือหน้าต่าง Login ที่กำลังแสดงผลอยู่
     const passwordInput = document.querySelector('input[type="password"]');
     if (passwordInput && passwordInput.offsetParent !== null) {
         return false;
@@ -36,7 +47,6 @@ function isUserLoggedIn() {
         return false;
     }
 
-    // 2. เช็กตัวแปรสิทธิ์ผู้ใช้งานหลังล็อกอิน
     if (typeof currentUser !== 'undefined' && currentUser && (currentUser.id || currentUser.username || currentUser.email)) {
         return true;
     }
@@ -48,7 +58,6 @@ function isUserLoggedIn() {
         }
     } catch(e) {}
 
-    // 3. เช็กว่าเปิดหน้าเนื้อหาหลักภายในระบบอยู่หรือไม่
     if (document.getElementById('app-content') || document.getElementById('sidebar') || document.querySelector('.main-content') || document.getElementById('view-approvals')) {
         return true;
     }
@@ -117,7 +126,7 @@ function escapeHTML(str) {
         .replace(/'/g, '&#039;');
 }
 
-// 🟢 เล่นเสียงแจ้งเตือนภาษาไทย (ระงับในหน้าเข้าสู่ระบบ 100%)
+// 🟢 เล่นเสียงแจ้งเตือนภาษาไทย (บังคับใช้เสียงผู้หญิงทั้ง Windows และ macOS 100%)
 function playTTSNotification(text) {
     if (!isUserLoggedIn()) return; // ⛔ บล็อกเสียงพูดถ้าอยู่ในหน้าล็อกอิน
     try {
@@ -125,8 +134,39 @@ function playTTSNotification(text) {
             window.speechSynthesis.cancel();
             const utter = new SpeechSynthesisUtterance(text);
             utter.lang = 'th-TH';
-            utter.rate = 1.0;
-            utter.pitch = 1.0;
+
+            // ดึงข้อมูลเสียงทั้งหมดที่มีในเบราว์เซอร์
+            const voices = window.speechSynthesis.getVoices();
+            const thaiVoices = voices.filter(v => v.lang === 'th-TH' || v.lang.startsWith('th'));
+
+            // 🎯 ค้นหาเสียงผู้หญิงภาษาไทยบน Windows/Edge/Chrome/macOS
+            let selectedFemaleVoice = thaiVoices.find(v => {
+                const nameLower = v.name.toLowerCase();
+                return (
+                    nameLower.includes('premwadee') || 
+                    nameLower.includes('narisa') || 
+                    nameLower.includes('kanya') || 
+                    nameLower.includes('achara') || 
+                    nameLower.includes('pattara') || 
+                    nameLower.includes('female') || 
+                    nameLower.includes('google ภาษาไทย') ||
+                    nameLower.includes('online (natural)')
+                );
+            });
+
+            // ถ้าไม่เจอเสียงที่ระบุชื่อตรงๆ ให้เลือกเสียงภาษาไทยที่มี หรือเสียงตัวแรกของภาษาไทย
+            if (!selectedFemaleVoice && thaiVoices.length > 0) {
+                selectedFemaleVoice = thaiVoices[0];
+            }
+
+            if (selectedFemaleVoice) {
+                utter.voice = selectedFemaleVoice;
+            }
+
+            // 🎵 ปรับค่าคีย์เสียง (Pitch) ให้เป็นเสียงผู้หญิงที่ฟังเป็นธรรมชาติ
+            utter.pitch = 1.2; // คีย์เสียงสูงสดใสระดับเสียงผู้หญิง
+            utter.rate = 1.05; // ความเร็วการพูดกำลังพอดี
+
             window.speechSynthesis.speak(utter);
         }
     } catch(e) {
@@ -295,7 +335,7 @@ async function loadPendingApprovalsFromDB() {
                 mergedData = data;
                 dbSuccess = true;
             } else if (error) {
-                console.warn("⚠️ Load DB Query Error:", error.message);
+                console.warn("⚠️️ Load DB Query Error:", error.message);
             }
         } catch(e) {
             console.warn("⚠️ Exception querying DB:", e);
@@ -311,7 +351,7 @@ async function loadPendingApprovalsFromDB() {
 
     if (mergedData) {
         const pendingCount = mergedData.filter(r => r.status === 'PENDING').length;
-        const loggedIn = isUserLoggedIn(); // 🟢 ตรวจสอบสถานะการเข้าสู่ระบบ
+        const loggedIn = isUserLoggedIn();
         const isAdmin = isCurrentUserAdmin();
 
         // 🚨 บล็อกการแสดงผลแจ้งเตือนทุกชนิดในหน้า Login
@@ -486,7 +526,7 @@ function triggerAdminNotification(record, count) {
 }
 
 function showFloatingNotificationAlert(title, message, type = 'info', isClickable = false) {
-    if (!isUserLoggedIn()) return; // ⛔ บล็อกการแสดงผลแจ้งเตือนหากอยู่ในหน้าเข้าสู่ระบบ
+    if (!isUserLoggedIn()) return;
 
     let container = document.getElementById('globalFloatingNotificationContainer');
     if (!container) {

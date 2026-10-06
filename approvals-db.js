@@ -1,5 +1,5 @@
 // =========================================================================
-// --- MODULE 6: APPROVAL REQUESTS DATABASE & REALTIME ENGINE (FEMALE VOICE ENHANCED) ---
+// --- MODULE 6: APPROVAL REQUESTS DATABASE & REALTIME ENGINE (GENDER DYNAMIC TTS) ---
 // =========================================================================
 
 const WMS_SUPABASE_URL = "https://eusuehaqgwkcgowsgyco.supabase.co";
@@ -126,46 +126,58 @@ function escapeHTML(str) {
         .replace(/'/g, '&#039;');
 }
 
-// 🟢 เล่นเสียงแจ้งเตือนภาษาไทย (บังคับใช้เสียงผู้หญิงทั้ง Windows และ macOS 100%)
+// 🟢 เล่นเสียงแจ้งเตือนภาษาไทย (ปรับคำลงท้ายอัตโนมัติ: ชาย = ครับ / หญิง = ค่ะ)
 function playTTSNotification(text) {
     if (!isUserLoggedIn()) return; // ⛔ บล็อกเสียงพูดถ้าอยู่ในหน้าล็อกอิน
     try {
         if ('speechSynthesis' in window) {
             window.speechSynthesis.cancel();
-            const utter = new SpeechSynthesisUtterance(text);
-            utter.lang = 'th-TH';
 
-            // ดึงข้อมูลเสียงทั้งหมดที่มีในเบราว์เซอร์
             const voices = window.speechSynthesis.getVoices();
             const thaiVoices = voices.filter(v => v.lang === 'th-TH' || v.lang.startsWith('th'));
 
-            // 🎯 ค้นหาเสียงผู้หญิงภาษาไทยบน Windows/Edge/Chrome/macOS
-            let selectedFemaleVoice = thaiVoices.find(v => {
-                const nameLower = v.name.toLowerCase();
-                return (
-                    nameLower.includes('premwadee') || 
-                    nameLower.includes('narisa') || 
-                    nameLower.includes('kanya') || 
-                    nameLower.includes('achara') || 
-                    nameLower.includes('pattara') || 
-                    nameLower.includes('female') || 
-                    nameLower.includes('google ภาษาไทย') ||
-                    nameLower.includes('online (natural)')
-                );
-            });
+            let selectedVoice = null;
+            let isMale = false;
 
-            // ถ้าไม่เจอเสียงที่ระบุชื่อตรงๆ ให้เลือกเสียงภาษาไทยที่มี หรือเสียงตัวแรกของภาษาไทย
-            if (!selectedFemaleVoice && thaiVoices.length > 0) {
-                selectedFemaleVoice = thaiVoices[0];
+            if (thaiVoices.length > 0) {
+                // เลือกเสียงแรกของภาษาไทยที่มีในระบบ
+                selectedVoice = thaiVoices[0];
+
+                const voiceNameLower = selectedVoice.name.toLowerCase();
+
+                // ตรวจสอบคีย์เวิร์ดว่าเป็นเสียงผู้ชายหรือไม่
+                if (
+                    voiceNameLower.includes('pattara') || 
+                    voiceNameLower.includes('niwat') || 
+                    voiceNameLower.includes('male') || 
+                    voiceNameLower.includes('guy') || 
+                    voiceNameLower.includes('david') || 
+                    voiceNameLower.includes('ชาย')
+                ) {
+                    isMale = true;
+                }
             }
 
-            if (selectedFemaleVoice) {
-                utter.voice = selectedFemaleVoice;
+            // ตัดคำลงท้ายเดิมออก เพื่อป้องกันการพูดว่า "ครับค่ะ" หรือ "ค่ะครับ"
+            let cleanText = String(text).replace(/(ค่ะ|ครับ|คะ)$/g, '').trim();
+
+            // เติมคำลงท้ายตามเพศของเสียงพูด
+            if (isMale) {
+                cleanText += " ครับ";
+            } else {
+                cleanText += " ค่ะ";
             }
 
-            // 🎵 ปรับค่าคีย์เสียง (Pitch) ให้เป็นเสียงผู้หญิงที่ฟังเป็นธรรมชาติ
-            utter.pitch = 1.2; // คีย์เสียงสูงสดใสระดับเสียงผู้หญิง
-            utter.rate = 1.05; // ความเร็วการพูดกำลังพอดี
+            const utter = new SpeechSynthesisUtterance(cleanText);
+            utter.lang = 'th-TH';
+
+            if (selectedVoice) {
+                utter.voice = selectedVoice;
+            }
+
+            // ปรับคีย์เสียง (Pitch) และความเร็ว (Rate) ให้เหมาะสมตามเพศของเสียง
+            utter.pitch = isMale ? 1.0 : 1.15;
+            utter.rate = 1.05;
 
             window.speechSynthesis.speak(utter);
         }
@@ -302,7 +314,7 @@ async function createPendingApprovalRequest(type, desc, targetSns, payloadData) 
 
     userTrackedRequestStatuses[activeRecord.id] = 'PENDING';
 
-    playTTSNotification("ส่งคำขออนุมัติเรียบร้อยแล้วค่ะ");
+    playTTSNotification("ส่งคำขออนุมัติเรียบร้อยแล้ว");
 
     showFloatingNotificationAlert(
         "📤 ส่งคำขออนุมัติเรียบร้อยแล้ว!",
@@ -335,7 +347,7 @@ async function loadPendingApprovalsFromDB() {
                 mergedData = data;
                 dbSuccess = true;
             } else if (error) {
-                console.warn("⚠️️ Load DB Query Error:", error.message);
+                console.warn("⚠️ Load DB Query Error:", error.message);
             }
         } catch(e) {
             console.warn("⚠️ Exception querying DB:", e);
@@ -384,7 +396,7 @@ async function loadPendingApprovalsFromDB() {
                     if (req.requester_username === currentUser.username) {
                         const oldStatus = userTrackedRequestStatuses[req.id];
                         if (oldStatus === 'PENDING' && req.status === 'APPROVED') {
-                            playTTSNotification("คำขอของคุณได้รับการอนุมัติแล้วค่ะ");
+                            playTTSNotification("คำขอของคุณได้รับการอนุมัติแล้ว");
                             showFloatingNotificationAlert(
                                 "🎉 คำขอได้รับการอนุมัติ!",
                                 `คำขอ "${req.description}" ของคุณได้รับการอนุมัติเรียบร้อยแล้ว`,
@@ -392,7 +404,7 @@ async function loadPendingApprovalsFromDB() {
                             );
                             triggerAutoUIRefresh();
                         } else if (oldStatus === 'PENDING' && req.status === 'REJECTED') {
-                            playTTSNotification("คำขอของคุณไม่ผ่านการอนุมัติค่ะ");
+                            playTTSNotification("คำขอของคุณไม่ผ่านการอนุมัติ");
                             showFloatingNotificationAlert(
                                 "❌ คำขอถูกปฏิเสธ",
                                 `คำขอ "${req.description}" ของคุณถูกปฏิเสธโดยผู้ดูแลระบบ`,
@@ -515,7 +527,7 @@ function updateAdminApprovalBadgeUI(count) {
 function triggerAdminNotification(record, count) {
     if (!isUserLoggedIn() || !isCurrentUserAdmin()) return;
 
-    playTTSNotification("มีคำขออนุมัติใหม่เข้ามาค่ะ");
+    playTTSNotification("มีคำขออนุมัติใหม่เข้ามา");
 
     showFloatingNotificationAlert(
         "🚨 มีคำขออนุมัติใหม่เข้ามา!",

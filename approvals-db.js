@@ -1,5 +1,5 @@
 // =========================================================================
-// --- MODULE 6: APPROVAL REQUESTS DATABASE & REALTIME ENGINE (GENDER DYNAMIC TTS) ---
+// --- MODULE 6: APPROVAL REQUESTS DATABASE & REALTIME ENGINE (STANDARDIZED FEMALE TTS) ---
 // =========================================================================
 
 const WMS_SUPABASE_URL = "https://eusuehaqgwkcgowsgyco.supabase.co";
@@ -12,7 +12,7 @@ let approvalRealtimeChannel = null;
 let userTrackedRequestStatuses = {};
 const LOCAL_APPROVALS_KEY = 'wms_local_pending_approvals_v2';
 
-// 🟢 โหลดรายการเสียงของระบบล่วงหน้าสำหรับ Windows/Mac/Android/iOS
+// 🟢 โหลดรายการเสียงของระบบล่วงหน้าสำหรับทุกเบราว์เซอร์
 let availableTTSVoices = [];
 function preloadTTSVoices() {
     if ('speechSynthesis' in window) {
@@ -126,7 +126,7 @@ function escapeHTML(str) {
         .replace(/'/g, '&#039;');
 }
 
-// 🟢 เล่นเสียงแจ้งเตือนภาษาไทย (ปรับคำลงท้ายอัตโนมัติ: ชาย = ครับ / หญิง = ค่ะ)
+// 🟢 เล่นเสียงแจ้งเตือนภาษาไทย (มาตรฐานเสียงผู้หญิงลงท้าย "ค่ะ" / เสียงผู้ชายลงท้าย "ครับ")
 function playTTSNotification(text) {
     if (!isUserLoggedIn()) return; // ⛔ บล็อกเสียงพูดถ้าอยู่ในหน้าล็อกอิน
     try {
@@ -140,28 +140,43 @@ function playTTSNotification(text) {
             let isMale = false;
 
             if (thaiVoices.length > 0) {
-                // เลือกเสียงแรกของภาษาไทยที่มีในระบบ
-                selectedVoice = thaiVoices[0];
+                // 1. ค้นหาและบังคับใช้เสียงผู้หญิงภาษาไทยเป็นมาตรฐานหลักก่อน (Chrome / Edge / Safari / Windows / Mac)
+                selectedVoice = thaiVoices.find(v => {
+                    const nameLower = v.name.toLowerCase();
+                    return (
+                        nameLower.includes('premwadee') || 
+                        nameLower.includes('narisa') || 
+                        nameLower.includes('kanya') || 
+                        nameLower.includes('achara') || 
+                        nameLower.includes('female') || 
+                        nameLower.includes('google ภาษาไทย') ||
+                        nameLower.includes('online (natural)')
+                    );
+                });
 
-                const voiceNameLower = selectedVoice.name.toLowerCase();
+                // 2. ถ้าไม่พบเสียงผู้หญิงเฉพาะเจาะจง ให้ใช้เสียงภาษาไทยเสียงแรกที่มีในเครื่อง
+                if (!selectedVoice) {
+                    selectedVoice = thaiVoices[0];
+                }
 
-                // ตรวจสอบคีย์เวิร์ดว่าเป็นเสียงผู้ชายหรือไม่
+                // 3. เช็กเพศของเสียงที่เลือกได้จริง ณ ขณะนั้น
+                const activeVoiceName = selectedVoice.name.toLowerCase();
                 if (
-                    voiceNameLower.includes('pattara') || 
-                    voiceNameLower.includes('niwat') || 
-                    voiceNameLower.includes('male') || 
-                    voiceNameLower.includes('guy') || 
-                    voiceNameLower.includes('david') || 
-                    voiceNameLower.includes('ชาย')
+                    activeVoiceName.includes('pattara') || 
+                    activeVoiceName.includes('niwat') || 
+                    activeVoiceName.includes('male') || 
+                    activeVoiceName.includes('guy') || 
+                    activeVoiceName.includes('david') || 
+                    activeVoiceName.includes('ชาย')
                 ) {
                     isMale = true;
                 }
             }
 
-            // ตัดคำลงท้ายเดิมออก เพื่อป้องกันการพูดว่า "ครับค่ะ" หรือ "ค่ะครับ"
+            // ตัดคำลงท้ายเดิมออก ป้องกันการพูดว่า "ค่ะค่ะ" หรือ "ครับค่ะ"
             let cleanText = String(text).replace(/(ค่ะ|ครับ|คะ)$/g, '').trim();
 
-            // เติมคำลงท้ายตามเพศของเสียงพูด
+            // เติมคำลงท้ายตามเพศของเสียงพูดอย่างชัดเจน
             if (isMale) {
                 cleanText += " ครับ";
             } else {
@@ -175,8 +190,8 @@ function playTTSNotification(text) {
                 utter.voice = selectedVoice;
             }
 
-            // ปรับคีย์เสียง (Pitch) และความเร็ว (Rate) ให้เหมาะสมตามเพศของเสียง
-            utter.pitch = isMale ? 1.0 : 1.15;
+            // ปรับระดับเสียงและคีย์พูดให้เป็นธรรมชาติที่สุดในทุกแพลตฟอร์ม
+            utter.pitch = isMale ? 1.0 : 1.2; 
             utter.rate = 1.05;
 
             window.speechSynthesis.speak(utter);
